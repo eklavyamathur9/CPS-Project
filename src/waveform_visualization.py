@@ -122,8 +122,8 @@ def compute_spectrogram(keys, noise=False):
         spectrum = np.abs(np.fft.rfft(frame))
         freqs = np.fft.rfftfreq(window, 1.0 / SAMPLE_RATE)
 
-        # Only keep the band of interest (400-1300 Hz) for clarity.
-        mask = (freqs >= 350) & (freqs <= 1300)
+        # Only keep the band of interest (350-1600 Hz) for clarity.
+        mask = (freqs >= 350) & (freqs <= 1600)
         frequencies.append(freqs[mask])
         times.append(start / SAMPLE_RATE)
         magnitudes.append(spectrum[mask])
@@ -181,7 +181,7 @@ def plot_spectrogram(keys, title="Frequency Spectrogram", noise=False):
 
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Frequency (Hz)")
-    ax.set_ylim(350, 1300)
+    ax.set_ylim(350, 1600)
     ax.grid(True, alpha=0.2)
 
     fig.suptitle(title, fontsize=13, fontweight="bold")

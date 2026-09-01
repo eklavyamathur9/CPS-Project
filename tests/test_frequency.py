@@ -18,15 +18,20 @@ from acoustic_side_channel import (
     KEY_FREQUENCIES,
     TOLERANCE,
     DEADLINE_MS,
+    WCET_TRIALS,
     check_invariants,
     identify_key,
     process_frequency,
     generate_frequency,
     reconstruct_sequence,
+    reconstruct_sequence_wcet,
+    compute_confidence,
+    sequence_details,
     liveness_test,
     termination_test,
     keys_from_text,
     key_from_char,
+    format_report,
 )
 
 import matplotlib
@@ -155,9 +160,9 @@ def test_sequence_reconstruction_hello():
 
 
 def test_sequence_reconstruction_invlalid_chars_skipped():
-    """Non-alphabetic/invalid chars are skipped in reconstruction."""
+    """Non-alphanumeric/invalid chars are skipped in reconstruction."""
     reconstructed, _, _, _ = reconstruct_sequence("A1B!C ", add_noise=False)
-    assert reconstructed == ["A", "B", "C", "SPACE"]
+    assert reconstructed == ["A", "1", "B", "C", "SPACE"]
 
 
 def test_sequence_reconstruction_with_noise():
@@ -219,9 +224,113 @@ def test_key_from_char_space():
 
 def test_key_from_char_invalid():
     """A non-key character maps to None."""
-    assert key_from_char("1") is None
     assert key_from_char("!") is None
     assert key_from_char("") is None
+
+
+def test_key_from_char_digit():
+    """A digit maps to its digit key."""
+    assert key_from_char("1") == "1"
+    assert key_from_char("0") == "0"
+
+
+def test_all_digits_in_database():
+    """All digit keys 0-9 are present in the frequency database."""
+    for digit in "0123456789":
+        assert digit in KEY_FREQUENCIES
+
+
+def test_digit_reconstruction():
+    """A sequence with digits reconstructs correctly."""
+    reconstructed, _, _, _ = reconstruct_sequence("CPS101", add_noise=False)
+    assert reconstructed == ["C", "P", "S", "1", "0", "1"]
+
+
+def test_digit_frequencies_unique_and_positive():
+    """Digit frequencies remain positive and unique."""
+    digits = [KEY_FREQUENCIES[d] for d in "0123456789"]
+    assert all(f > 0 for f in digits)
+    assert len(digits) == len(set(digits))
+
+
+# ----------------------------------------------------------
+# STATISTICAL CONFIDENCE
+# ----------------------------------------------------------
+
+def test_confidence_perfect_match():
+    """A zero-error match gives maximum (1.0) confidence."""
+    score = compute_confidence("A", 0.0)
+    assert score == 1.0
+
+
+def test_confidence_at_tolerance_zero():
+    """An error at the tolerance limit gives 0.0 confidence."""
+    score = compute_confidence("A", TOLERANCE)
+    assert score <= 1e-9
+
+
+def test_confidence_unknown_zero():
+    """An UNKNOWN key gives 0.0 confidence."""
+    assert compute_confidence("UNKNOWN", 5.0) == 0.0
+
+
+def test_confidence_clamped():
+    """Confidence stays within [0, 1]."""
+    for score in [
+        compute_confidence("A", 0.0),
+        compute_confidence("A", 4.0),
+        compute_confidence("A", TOLERANCE),
+        compute_confidence("UNKNOWN", 999),
+    ]:
+        assert 0.0 <= score <= 1.0
+
+
+# ----------------------------------------------------------
+# MULTI-TRIAL WCET
+# ----------------------------------------------------------
+
+def test_wcet_median_p95_present():
+    """reconstruct_sequence_wcet reports median and P95 timings."""
+    _, avg_time, median, p95, _ = reconstruct_sequence_wcet(
+        "HELLOWORLD", add_noise=True, trials=5
+    )
+    assert avg_time >= 0
+    assert median >= 0
+    assert p95 >= 0
+
+
+def test_wcet_p95_below_deadline():
+    """P95 WCET stays below the deadline."""
+    _, _, _, p95, _ = reconstruct_sequence_wcet(
+        "HELLOWORLD", add_noise=True, trials=WCET_TRIALS
+    )
+    assert p95 < DEADLINE_MS
+
+
+# ----------------------------------------------------------
+# SEQUENCE DETAILS / REPORT
+# ----------------------------------------------------------
+
+def test_sequence_details_shape():
+    """sequence_details returns one dict per valid key with confidence."""
+    details = sequence_details("CPS101", add_noise=False)
+    assert len(details) == 6
+    for d in details:
+        assert d["key"] in KEY_FREQUENCIES
+        assert 0.0 <= d["confidence"] <= 1.0
+        assert d["error"] >= 0
+
+
+def test_format_report_contains_sections():
+    """format_report includes the expected report sections."""
+    report = format_report("HELLO WORLD", add_noise=False)
+    assert "INVARIANT CHECK" in report
+    assert "RECONSTRUCTED SEQUENCE" in report
+    assert "REAL-TIME ANALYSIS" in report
+    assert "RANKING FUNCTION" in report
+    assert "LIVENESS" in report
+    assert "TERMINATION" in report
+    assert "END OF REPORT" in report
 
 
 # ----------------------------------------------------------

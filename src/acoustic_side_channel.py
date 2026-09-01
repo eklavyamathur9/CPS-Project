@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import time
 import random
 import os
@@ -44,7 +44,19 @@ KEY_FREQUENCIES = {
     "Y": 1160.0,
     "Z": 1190.0,
 
-    "SPACE": 1220.0
+    "SPACE": 1220.0,
+
+    "0": 1250.0,
+    "1": 1280.0,
+    "2": 1310.0,
+    "3": 1340.0,
+    "4": 1370.0,
+
+    "5": 1400.0,
+    "6": 1430.0,
+    "7": 1460.0,
+    "8": 1490.0,
+    "9": 1520.0
 }
 
 
@@ -57,6 +69,9 @@ TOLERANCE = 8.0
 
 # Deadline used for the CPS real-time demonstration.
 DEADLINE_MS = 50.0
+
+# Number of trials used for robust WCET (median / P95) reporting.
+WCET_TRIALS = 20
 
 
 # ============================================================
@@ -175,6 +190,65 @@ def process_frequency(frequency):
 
 
 # ============================================================
+# 5b. STATISTICAL CONFIDENCE
+# ============================================================
+
+def compute_confidence(detected_key, error):
+    """
+    Compute a confidence score (0.0 - 1.0) for a detected key.
+
+    The score is based on how close the error is to the detection
+    tolerance: an error of 0 gives maximum confidence, while an
+    error at the tolerance limit gives the minimum. Unknown keys
+    always report 0.0 confidence.
+
+    Confidence = 1 - (error / TOLERANCE), clamped to [0, 1].
+    """
+    if detected_key == "UNKNOWN":
+        return 0.0
+
+    if TOLERANCE <= 0:
+        return 1.0
+
+    score = 1.0 - (error / TOLERANCE)
+
+    return max(0.0, min(1.0, score))
+
+
+def reconstruct_sequence_wcet(text, add_noise=False, trials=1):
+    """
+    Run the reconstruction across multiple trials and report robust
+    timing statistics: median and P95 worst-case execution time.
+
+    Returns (reconstructed, average_time, wcet_median, wcet_p95,
+    average_error).
+    """
+    all_wcet = []
+
+    result = reconstruct_sequence(text, add_noise=add_noise)
+
+    all_wcet.append(result[2])
+
+    for _ in range(trials - 1):
+        r = reconstruct_sequence(text, add_noise=add_noise)
+        all_wcet.append(r[2])
+
+    all_wcet.sort()
+
+    median = all_wcet[len(all_wcet) // 2]
+    p95_index = max(0, int(len(all_wcet) * 0.95) - 1)
+    p95 = all_wcet[p95_index]
+
+    return (
+        result[0],
+        result[1],
+        median,
+        p95,
+        result[3]
+    )
+
+
+# ============================================================
 # 6. PROCESS A COMPLETE SEQUENCE
 # ============================================================
 
@@ -231,6 +305,37 @@ def reconstruct_sequence(text, add_noise=False):
         worst_case,
         average_error
     )
+
+
+def sequence_details(text, add_noise=False):
+    """
+    Build a detailed per-key analysis for a text sequence.
+
+    Returns a list of dicts, one per valid key, each containing:
+        key, frequency, detected_key, error, time_ms, confidence
+    """
+    details = []
+
+    for character in text.upper():
+        key = key_from_char(character)
+
+        if key is None:
+            continue
+
+        frequency = generate_frequency(key, noise=add_noise)
+        detected_key, error, execution_time = process_frequency(frequency)
+        confidence = compute_confidence(detected_key, error)
+
+        details.append({
+            "key": key,
+            "frequency": frequency,
+            "detected_key": detected_key,
+            "error": error,
+            "time_ms": execution_time,
+            "confidence": confidence,
+        })
+
+    return details
 
 
 # ============================================================
@@ -301,6 +406,7 @@ def key_from_char(character):
 
     - " "     -> "SPACE"
     - letter  -> uppercase letter (if it has a frequency)
+    - digit   -> the digit character
     - else    -> None (not a valid key)
     """
     if character == " ":
@@ -312,6 +418,119 @@ def key_from_char(character):
         return character
 
     return None
+
+
+# ============================================================
+# 8c. REPORT EXPORT
+# ============================================================
+
+def format_report(text, add_noise=False, trials=WCET_TRIALS):
+    """
+    Build a printable text report for the current analysis.
+
+    Returns a multi-line string.
+    """
+    lines = []
+
+    lines.append("=" * 60)
+    lines.append("ACOUSTIC SIDE-CHANNEL SIMULATOR - ANALYSIS REPORT")
+    lines.append("=" * 60)
+
+    lines.append(f"\nInput sequence     : {text}")
+    lines.append(f"Synthetic noise    : {'ON' if add_noise else 'OFF'}")
+    lines.append(f"Generated at       : {time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Invariants
+    invariants = check_invariants()
+    lines.append("\n---------- INVARIANT CHECK ----------")
+    for name, result in invariants.items():
+        lines.append(f"{name:<35} : {'PASS' if result else 'FAIL'}")
+
+    # Per-key details
+    details = sequence_details(text, add_noise=add_noise)
+
+    if details:
+        lines.append("\n---------- PER-KEY FREQUENCY MAPPING ----------")
+        lines.append(f"{'Key':<8}{'Freq (Hz)':>12}{'Detected':>10}"
+                     f"{'Error':>10}{'Conf.':>9}{'Time (ms)':>12}")
+        for d in details:
+            lines.append(
+                f"{d['key']:<8}{d['frequency']:>12.2f}"
+                f"{d['detected_key']:>10}{d['error']:>10.2f}"
+                f"{d['confidence']:>9.3f}{d['time_ms']:>12.3f}"
+            )
+
+        reconstructed = [d["detected_key"] for d in details]
+        lines.append("\n---------- RECONSTRUCTED SEQUENCE ----------")
+        lines.append(" ".join(reconstructed))
+    else:
+        lines.append("\nNo valid keys detected in the input sequence.")
+
+    # Timing (multi-trial)
+    reconstructed, avg_time, wcet_median, wcet_p95, avg_error = \
+        reconstruct_sequence_wcet(
+            text,
+            add_noise=add_noise,
+            trials=trials
+        )
+
+    lines.append("\n---------- REAL-TIME ANALYSIS ----------")
+    lines.append(f"Average Execution Time            : {avg_time:.4f} ms")
+    lines.append(f"WCET (median, {trials} trials)    : {wcet_median:.4f} ms")
+    lines.append(f"WCET (P95, {trials} trials)       : {wcet_p95:.4f} ms")
+    lines.append(f"Required Deadline                 : {DEADLINE_MS:.2f} ms")
+
+    deadline_pass = wcet_p95 < DEADLINE_MS
+    lines.append(
+        f"Deadline Status                    : "
+        f"{'PASS' if deadline_pass else 'FAIL'}"
+    )
+
+    lines.append("\n---------- RANKING FUNCTION ----------")
+    lines.append("V = |Detected Frequency - Expected Frequency|")
+    lines.append(f"Average V = {avg_error:.4f} Hz")
+
+    # Liveness & termination
+    live = liveness_test()
+    lines.append("\n---------- LIVENESS ----------")
+    lines.append("System can process new input      : "
+                 + ("PASS" if live else "FAIL"))
+
+    terminated = termination_test()
+    lines.append("\n---------- TERMINATION ----------")
+    lines.append("Finite processing terminates      : "
+                 + ("PASS" if terminated else "FAIL"))
+
+    lines.append("\n" + "=" * 60)
+    lines.append("END OF REPORT")
+
+    return "\n".join(lines)
+
+
+def export_report(text, output_path, add_noise=False, trials=WCET_TRIALS,
+                  export_plots=False):
+    """
+    Write a text report to disk, optionally saving the waveform PNG plots
+    alongside it.
+
+    Returns a list of files written.
+    """
+    report = format_report(text, add_noise=add_noise, trials=trials)
+
+    with open(output_path, "w", encoding="utf-8") as fh:
+        fh.write(report + "\n")
+
+    files = [output_path]
+
+    if export_plots:
+        from waveform_visualization import save_visualizations
+
+        keys = keys_from_text(text) or ["A"]
+        directory = os.path.dirname(output_path) or "."
+        files.extend(save_visualizations(keys, directory=directory,
+                                         noise=add_noise))
+
+    return files
 
 
 # ============================================================
@@ -334,6 +553,8 @@ class AcousticSideChannelApp:
         self.live_spec_ax = None
         self.live_sine_fig = None
         self.live_sine_axes = None
+
+        self.export_plots_var = tk.BooleanVar(value=True)
 
         self.create_interface()
 
@@ -427,6 +648,30 @@ class AcousticSideChannelApp:
 
         self.visualize_button.pack(side="left", padx=5)
 
+        self.export_button = ttk.Button(
+            button_frame,
+            text="Export Report",
+            command=self.export_report
+        )
+
+        self.export_button.pack(side="left", padx=5)
+
+        self.copy_button = ttk.Button(
+            button_frame,
+            text="Copy Result",
+            command=self.copy_result
+        )
+
+        self.copy_button.pack(side="left", padx=5)
+
+        export_plots_check = ttk.Checkbutton(
+            button_frame,
+            text="Include plots (PNG)",
+            variable=self.export_plots_var
+        )
+
+        export_plots_check.pack(side="left", padx=5)
+
         # ----------------------------------------------------
         # KEYPAD (live incremental input)
         # ----------------------------------------------------
@@ -471,6 +716,25 @@ class AcousticSideChannelApp:
 
                 self.keypad_buttons[letter] = btn
 
+        # Digits row (0-9) below the letters.
+        for col_idx, digit in enumerate("0123456789"):
+
+            btn = ttk.Button(
+                keypad_frame,
+                text=digit,
+                width=4,
+                command=lambda k=digit: self.on_key_pressed(k)
+            )
+
+            btn.grid(
+                row=4,
+                column=col_idx,
+                padx=2,
+                pady=2
+            )
+
+            self.keypad_buttons[digit] = btn
+
         space_btn = ttk.Button(
             keypad_frame,
             text="SPACE",
@@ -496,7 +760,7 @@ class AcousticSideChannelApp:
         clear_btn.grid(
             row=2,
             column=7,
-            rowspan=2,
+            rowspan=3,
             padx=4,
             pady=2
         )
@@ -671,11 +935,12 @@ class AcousticSideChannelApp:
         # Per-key processing for the status line.
         frequency = generate_frequency(key, noise=self.noise_var.get())
         detected_key, error, execution_time = process_frequency(frequency)
+        confidence = compute_confidence(detected_key, error)
 
         self.status_var.set(
             f"Key={key}  Freq={frequency:.2f} Hz  "
             f"Detected={detected_key}  Error={error:.2f} Hz  "
-            f"Time={execution_time:.3f} ms  "
+            f"Conf={confidence:.3f}  Time={execution_time:.3f} ms  "
             f"[{len(self.pressed_keys)} keys]"
         )
 
@@ -829,6 +1094,13 @@ class AcousticSideChannelApp:
                 add_noise=self.noise_var.get()
             )
 
+        # Multi-trial WCET for robust timing.
+        _, _, wcet_median, wcet_p95, _ = reconstruct_sequence_wcet(
+            text,
+            add_noise=self.noise_var.get(),
+            trials=WCET_TRIALS
+        )
+
         # ----------------------------------------------
         # FREQUENCY MAPPING
         # ----------------------------------------------
@@ -836,6 +1108,12 @@ class AcousticSideChannelApp:
         self.output.insert(
             tk.END,
             "\n========== FREQUENCY MAPPING ==========\n\n"
+        )
+
+        self.output.insert(
+            tk.END,
+            f"{'Key':<8}{'Freq (Hz)':>12}{'Detected':>10}"
+            f"{'Error':>10}{'Conf.':>9}{'Time (ms)':>12}\n"
         )
 
         for key in mapped:
@@ -848,13 +1126,19 @@ class AcousticSideChannelApp:
             detected_key, error, execution_time = \
                 process_frequency(frequency)
 
+            confidence = compute_confidence(
+                detected_key,
+                error
+            )
+
             self.output.insert(
                 tk.END,
-                f"{key:<8} "
-                f"Freq={frequency:8.2f} Hz   "
-                f"Detected={detected_key:<7} "
-                f"Error={error:6.2f} Hz   "
-                f"Time={execution_time:6.3f} ms\n"
+                f"{key:<8}"
+                f"{frequency:12.2f}"
+                f"{detected_key:>10} "
+                f"{error:>10.2f} "
+                f"{confidence:>9.3f} "
+                f"{execution_time:>12.3f}\n"
             )
 
         # ----------------------------------------------
@@ -894,11 +1178,23 @@ class AcousticSideChannelApp:
 
         self.output.insert(
             tk.END,
+            f"WCET (median, {WCET_TRIALS} trials) : "
+            f"{wcet_median:.4f} ms\n"
+        )
+
+        self.output.insert(
+            tk.END,
+            f"WCET (P95, {WCET_TRIALS} trials)    : "
+            f"{wcet_p95:.4f} ms\n"
+        )
+
+        self.output.insert(
+            tk.END,
             f"Required Deadline : "
             f"{DEADLINE_MS:.2f} ms\n"
         )
 
-        if wcet < DEADLINE_MS:
+        if wcet_p95 < DEADLINE_MS:
 
             self.output.insert(
                 tk.END,
@@ -966,6 +1262,56 @@ class AcousticSideChannelApp:
         )
 
         self.status_var.set("Analysis complete")
+
+    def export_report(self):
+        """
+        Export the current analysis as a text report, optionally saving the
+        waveform plots (PNG) alongside it.
+        """
+        text = self.input_entry.get()
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text file", "*.txt"), ("All files", "*.*")],
+            title="Save Analysis Report"
+        )
+
+        if not output_path:
+            self.status_var.set("Export cancelled")
+            return
+
+        self.status_var.set("Exporting report...")
+        self.root.update_idletasks()
+
+        export_plots = self.export_plots_var.get()
+
+        try:
+            files = export_report(
+                text,
+                output_path,
+                add_noise=self.noise_var.get(),
+                trials=WCET_TRIALS,
+                export_plots=export_plots
+            )
+            self.status_var.set(
+                "Report exported: " + ", ".join(files)
+            )
+        except Exception as exc:
+            self.status_var.set(f"Export failed: {exc}")
+
+    def copy_result(self):
+        """
+        Copy the analysis result text to the system clipboard.
+        """
+        result = self.output.get("1.0", tk.END).strip()
+
+        if not result:
+            self.status_var.set("Nothing to copy")
+            return
+
+        self.root.clipboard_clear()
+        self.root.clipboard_append(result)
+        self.status_var.set("Result copied to clipboard")
 
 
 # ============================================================
