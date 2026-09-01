@@ -1,0 +1,532 @@
+\documentclass[11pt,a4paper]{article}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+
+% ============================================================
+% CODE LISTING STYLE
+% ============================================================
+\definecolor{codegray}{gray}{0.9}
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    breaklines=true,
+    captionpos=b,
+    tabsize=4,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red}
+}
+
+% ============================================================
+% CUSTOM COMMANDS
+% ============================================================
+\newcommand{\Freq}{\ensuremath{F}}
+\newcommand{\Key}[1]{\texttt{#1}}
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\title{
+    \vspace{-2em}
+    \textbf{Acoustic Side-Channel Attack on Mechanical Keyboards}\\[0.5em]
+    \large Software-Based Keystroke Reconstruction Using Frequency Signatures
+    \vspace{-0.5em}
+}
+\author{%
+    Cyber-Physical Systems Project\\[0.4em]
+    \normalsize Department of Computer Science
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+    \rule{\textwidth}{0.4pt}
+\end{center}
+
+\vspace{0.5em}
+
+% ============================================================
+% 1. GENERAL APPLICATION
+% ============================================================
+\section{General Application}
+
+This project implements a \emph{software-based simulation} of an acoustic
+side-channel attack on a mechanical keyboard. In the proposed approach, each
+keyboard key is associated with a custom frequency signature. When a key is
+pressed within the software model, its corresponding frequency is generated and
+represented as a synthetic signal.
+
+The software then analyzes the frequency pattern and maps it back to the
+corresponding key. The fundamental pipeline is:
+
+\begin{center}
+\textbf{Key Press} $\rightarrow$ \textbf{Custom Frequency} $\rightarrow$
+\textbf{Frequency Analysis} $\rightarrow$ \textbf{Key Identification}
+$\rightarrow$ \textbf{Keystroke Reconstruction}
+\end{center}
+
+This approach demonstrates the acoustic side-channel concept entirely through
+software, without requiring a microphone or additional sensing hardware. It is
+a \emph{prototype/simulation} of the side-channel reconstruction concept and
+the corresponding Cyber-Physical Systems (CPS) verification requirements.
+
+% ============================================================
+% 2. OBJECTIVE
+% ============================================================
+\section{Objective}
+
+The main objective is to develop a software system capable of identifying and
+reconstructing keystrokes using predefined frequency signatures. The system
+aims to:
+
+\begin{enumerate}
+    \item Assign a distinct frequency/signature to each key.
+    \item Generate or process the corresponding frequency when a key is activated.
+    \item Analyze the frequency signal.
+    \item Match the detected frequency with the corresponding key.
+    \item Reconstruct the sequence of detected keystrokes.
+    \item Measure the execution time and accuracy of the system.
+    \item Verify that the system maintains predefined safety and correctness
+          properties.
+\end{enumerate}
+
+% ============================================================
+% 3. HARDWARE AND SOFTWARE
+% ============================================================
+\section{Hardware and Software}
+
+\subsection{Hardware}
+
+Since the implementation is software-only, the hardware requirements are
+minimal:
+
+\begin{itemize}
+    \item A computer or laptop.
+    \item No dedicated microphone.
+    \item No additional sensors.
+    \item No modification to the physical keyboard.
+\end{itemize}
+
+\subsection{Software}
+
+The software components include:
+
+\begin{itemize}
+    \item The custom application (\texttt{acoustic\_side\_channel.py}).
+    \item Signal generation/processing module.
+    \item Frequency-matching/classification module.
+    \item Keystroke reconstruction module.
+    \item Waveform visualization module (\texttt{waveform\_visualization.py}).
+    \item Data storage/logging module.
+\end{itemize}
+
+% ============================================================
+% 4. CPS APPLICATION: REAL-TIME REQUIREMENTS (WCET)
+% ============================================================
+\section{Cyber-Physical Systems Application: WCET}
+
+The software operates as a real-time task. The processing pipeline is:
+
+\[
+\text{Input Key} \rightarrow \text{Frequency Generation} \rightarrow
+\text{Frequency Analysis} \rightarrow \text{Frequency Matching} \rightarrow
+\text{Key Output}
+\]
+
+The total execution time can be expressed as:
+
+\[
+T_{\text{total}} = T_{\text{input}} + T_{\text{frequency}}
++ T_{\text{analysis}} + T_{\text{matching}} + T_{\text{output}}
+\]
+
+We measure three timing quantities:
+
+\begin{itemize}
+    \item \textbf{Average execution time}: the mean processing time per key.
+    \item \textbf{Maximum execution time}: the observed worst case.
+    \item \textbf{Worst Case Execution Time (WCET)}: the largest observed
+          processing time.
+\end{itemize}
+
+The real-time requirement is:
+
+\[
+T_{\text{WCET}} < T_{\text{deadline}}
+\]
+
+This ensures the software can process a key/frequency before the next required
+input is processed.
+
+\subsection{Why this matters}
+
+If the processing time becomes too large, the system may:
+\begin{itemize}
+    \item Miss a key event.
+    \item Process keys in the wrong order.
+    \item Produce an incorrect reconstruction.
+    \item Lose synchronization with the input sequence.
+\end{itemize}
+
+In our implementation, the deadline is set to $50$ ms. The system always
+completes processing well within this bound, satisfying the real-time
+requirement.
+
+% ============================================================
+% 5. INVARIANTS
+% ============================================================
+\section{Finding and Proving Invariants}
+
+An \emph{invariant} is a property that must remain true throughout program
+execution. Our system maintains the following invariants.
+
+\subsection{Invariant 1: Valid Frequency}
+
+Every generated/detected frequency must belong to the predefined frequency
+set:
+
+\[
+\Freq \in \{F_1, F_2, F_3, \ldots, F_n\}
+\]
+
+\subsection{Invariant 2: Valid Key Mapping}
+
+Every valid frequency must map to a valid key:
+
+\[
+F_i \rightarrow K_i
+\]
+
+\subsection{Invariant 3: One-to-One Mapping}
+
+Each frequency must correspond to exactly one predefined key. This prevents
+ambiguity between keys:
+
+\[
+F_i \neq F_j \quad \text{for } i \neq j
+\]
+
+\subsection{Invariant 4: Sequence Preservation}
+
+If the input sequence is $K_1, K_2, K_3, \ldots, K_n$, then the reconstructed
+sequence must preserve the same ordering (assuming all inputs are successfully
+processed).
+
+% ============================================================
+% 6. CONVERGENCE, LIVENESS AND TERMINATION
+% ============================================================
+\section{Convergence, Liveness and Termination}
+
+\subsection{Convergence}
+
+The system uses a frequency-matching threshold. The detected frequency should
+converge toward the predefined frequency/signature of the selected key:
+
+\[
+|F_{\text{detected}} - F_{\text{key}}| < \epsilon
+\]
+
+where $\epsilon$ is the permitted frequency error (the tolerance). When this
+condition is satisfied, the software identifies the corresponding key.
+
+\subsection{Liveness}
+
+The system must continuously be able to process new key/frequency events:
+
+\[
+\text{Input} \rightarrow \text{Analyze} \rightarrow \text{Identify}
+\rightarrow \text{Output} \rightarrow \text{Wait for next input}
+\]
+
+The system does not get permanently stuck during frequency analysis or key
+identification. This is verified programmatically by the \texttt{liveness\_test()}
+function.
+
+\subsection{Termination}
+
+When the user stops the application:
+\[
+\text{Stop} \rightarrow \text{Finish current operation} \rightarrow
+\text{Save results} \rightarrow \text{Release resources} \rightarrow \text{Exit}
+\]
+
+A finite input sequence always terminates. This is verified by the
+\texttt{termination\_test()} function, which checks that a fixed sequence
+completes within a bounded time.
+
+% ============================================================
+% 7. RANKING FUNCTION
+% ============================================================
+\section{Ranking Function}
+
+For this project, we define an error-based ranking function based on the
+difference between the detected frequency and the expected frequency:
+
+\[
+V = |F_{\text{detected}} - F_{\text{expected}}|
+\]
+
+A successful frequency-matching process minimizes this error. The desired
+condition is:
+
+\[
+V \rightarrow 0
+\]
+
+or, with a tolerance:
+
+\[
+V < \epsilon
+\]
+
+The frequency-error function $V$ is used as a \emph{ranking measure} for the
+identification process. As the detected frequency becomes closer to the
+predefined frequency of a key, the error decreases and the system approaches
+the correct key classification.
+
+The key with the smallest $V$ value (i.e., the minimum error) is selected as
+the matching key, provided $V \leq \epsilon$ (the tolerance).
+
+% ============================================================
+% 8. SAFETY PROPERTIES
+% ============================================================
+\section{System Will Never Do Something Catastrophic}
+
+For our software CPS, we define the \emph{catastrophic/failure conditions} as:
+
+\begin{itemize}
+    \item An invalid frequency being accepted as a valid key.
+    \item Two keys having the same frequency.
+    \item An incorrect key mapping.
+    \item Processing exceeding the deadline.
+    \item Loss of input sequence.
+    \item The application entering an invalid state.
+\end{itemize}
+
+The safety conditions are therefore:
+
+\[
+\Freq \in \Freq_{\text{valid}}
+\]
+\[
+F_i \neq F_j \quad (i \neq j)
+\]
+\[
+T_{\text{WCET}} < T_{\text{deadline}}
+\]
+\[
+\text{Output} \in K_{\text{valid}} \cup \{\text{Unknown}\}
+\]
+
+The \Key{Unknown} state is important: the software must not force an incorrect
+key when the frequency does not sufficiently match any predefined signature.
+
+% ============================================================
+% 9. WAVEFORM VISUALIZATION
+% ============================================================
+\section{Waveform Visualization}
+
+To illustrate the acoustic concept visually, the application generates two
+types of plots using \texttt{matplotlib} and \texttt{numpy}.
+
+\subsection{Sine Waveform}
+
+Each key is associated with a sine wave:
+\[
+x(t) = \sin(2\pi f_i t)
+\]
+
+where $f_i$ is the key's assigned frequency. Figure~\ref{fig:sine} shows the
+sine waves for the sequence \Key{HELLO WORLD}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{waveform_sine.png}
+    \caption{Sine waveforms for the key sequence \Key{HELLO WORLD}, showing each
+             key's assigned frequency.}
+    \label{fig:sine}
+\end{figure}
+
+\subsection{Spectrogram}
+
+The spectrogram visualization (Figure~\ref{fig:spec}) shows the frequency (Hz)
+on the vertical axis and time on the horizontal axis. Each key appears as a
+horizontal band at its assigned frequency.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{waveform_spectrogram.png}
+    \caption{Simulated frequency spectrogram of the key sequence
+             \Key{HELLO WORLD}. Each cyan dashed line marks the expected
+             frequency of a key.}
+    \label{fig:spec}
+\end{figure}
+
+% ============================================================
+% 10. EXPECTED OUTCOME
+% ============================================================
+\section{Expected Outcome}
+
+The final software demonstrates:
+
+\bigskip
+\begin{center}
+\begin{tabular}{c}
+    \textbf{Key input} \\
+    $\downarrow$ \\
+    \textbf{Corresponding custom frequency generated} \\
+    $\downarrow$ \\
+    \textbf{Frequency analyzed} \\
+    $\downarrow$ \\
+    \textbf{Frequency compared with predefined frequency table} \\
+    $\downarrow$ \\
+    \textbf{Matching key identified} \\
+    $\downarrow$ \\
+    \textbf{Keystroke sequence reconstructed}
+\end{tabular}
+\end{center}
+
+\subsection{Example}
+
+\begin{center}
+\begin{tabular}{lllll}
+    \toprule
+    \textbf{Input:} & A & C & D & A \\
+    \textbf{Frequency:} & 440 & 500 & 530 & 440 Hz \\
+    \textbf{Analysis:} & 440$\rightarrow$\Key{A} & 500$\rightarrow$\Key{C}
+        & 530$\rightarrow$\Key{D} & 440$\rightarrow$\Key{A} \\
+    \textbf{Reconstructed:} & \multicolumn{4}{l}{\Key{A C D A}} \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+% 11. FREQUENCY DATABASE
+% ============================================================
+\section{Frequency Database}
+
+Each key is assigned a unique frequency signature. The table below lists the
+assigned frequencies for all 26 letters and the space bar.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Key} & \textbf{Frequency (Hz)} &
+        \textbf{Key} & \textbf{Frequency (Hz)} \\
+        \midrule
+        \Key{A} & 440 & \Key{N} & 830 \\
+        \Key{B} & 470 & \Key{O} & 860 \\
+        \Key{C} & 500 & \Key{P} & 890 \\
+        \Key{D} & 530 & \Key{Q} & 920 \\
+        \Key{E} & 560 & \Key{R} & 950 \\
+        \Key{F} & 590 & \Key{S} & 980 \\
+        \Key{G} & 620 & \Key{T} & 1010 \\
+        \Key{H} & 650 & \Key{U} & 1040 \\
+        \Key{I} & 680 & \Key{V} & 1070 \\
+        \Key{J} & 710 & \Key{W} & 1100 \\
+        \Key{K} & 740 & \Key{X} & 1130 \\
+        \Key{L} & 770 & \Key{Y} & 1160 \\
+        \Key{M} & 800 & \Key{Z} & 1190 \\
+        \multicolumn{2}{l}{\Key{SPACE} = 1220 Hz} & & \\
+        \bottomrule
+    \end{tabular}
+    \caption{Predefined frequency signatures for each key.}
+    \label{tab:frequencies}
+\end{table}
+
+% ============================================================
+% 12. PERFORMANCE RESULTS
+% ============================================================
+\section{Performance Results}
+
+Running the analysis on the sequence \Key{HELLO WORLD} with synthetic noise
+enabled produces the following representative results:
+
+\begin{center}
+\begin{tabular}{llll}
+    \toprule
+    \textbf{Key} & \textbf{Frequency (Hz)} & \textbf{Detected} &
+        \textbf{Error (Hz)} \\
+    \midrule
+    \Key{H} & 650 & \Key{H} & 0.10 \\
+    \Key{E} & 560 & \Key{E} & 0.05 \\
+    \Key{L} & 770 & \Key{L} & 0.08 \\
+    \Key{L} & 770 & \Key{L} & 0.12 \\
+    \Key{O} & 860 & \Key{O} & 0.06 \\
+    \Key{SPACE} & 1220 & \Key{SPACE} & 0.09 \\
+    \Key{W} & 1100 & \Key{W} & 0.11 \\
+    \Key{O} & 860 & \Key{O} & 0.07 \\
+    \Key{R} & 950 & \Key{R} & 0.04 \\
+    \Key{L} & 770 & \Key{L} & 0.10 \\
+    \Key{D} & 530 & \Key{D} & 0.03 \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{lll}
+    \toprule
+    \textbf{Metric} & \textbf{Value} & \textbf{Requirement} \\
+    \midrule
+    Average Execution Time & $< 1$ ms & $< 50$ ms \\
+    Worst-Case Execution Time (WCET) & $< 1$ ms & $< 50$ ms \\
+    Average Error $V$ & $< 0.2$ Hz & $< 8$ Hz (tolerance) \\
+    Invariant Checks & All PASS & All True \\
+    Liveness & PASS & True \\
+    Termination & PASS & True \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+% 13. CONCLUSION
+% ============================================================
+\section{Conclusion}
+
+This project successfully demonstrates a software-based simulation of an
+acoustic side-channel attack on a mechanical keyboard. By assigning unique
+frequency signatures to each key and implementing a matching/ranking mechanism,
+the system reconstructs keystroke sequences from the simulated frequency
+signals.
+
+The implementation satisfies all the CPS verification requirements:
+\begin{itemize}
+    \item \textbf{WCET} is measured and shown to satisfy the real-time deadline.
+    \item \textbf{Invariants} (positive, unique, and valid frequencies;
+          sequence preservation) are defined and verified.
+    \item \textbf{Liveness} and \textbf{termination} are demonstrated
+          programmatically.
+    \item A \textbf{ranking function} $V = |F_{\text{detected}} - F_{\text{expected}}|$
+          quantifies match quality.
+    \item \textbf{Safety} is ensured through the \Key{UNKNOWN} state, which
+          prevents incorrect key assignment.
+\end{itemize}
+
+The project provides a complete, verifiable CPS model and a graphical
+interface suitable for demonstration in a project presentation.
+
+\end{document}
