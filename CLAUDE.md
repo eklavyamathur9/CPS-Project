@@ -47,7 +47,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram plots
 ├── tests/
-│   └── test_frequency.py             # 20 unit tests covering CPS invariants
+│   └── test_frequency.py             # 28 unit tests covering CPS invariants
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report

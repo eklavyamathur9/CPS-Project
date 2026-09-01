@@ -52,7 +52,15 @@
 }
 \author{%
     Cyber-Physical Systems Project\\[0.4em]
-    \normalsize Department of Computer Science
+    \normalsize
+    \begin{tabular}{ll}
+        23MEI10066 & Dev Soni \\
+        23MEI10067 & Shreyansh Tripathi \\
+        23MEI10069 & Himalaya Yadav \\
+        23MEI10070 & Eklavya Mathur \\
+        23MEI10085 & Akshit Agrawal \\
+    \end{tabular}\\[0.4em]
+    Department of Computer Science
 }
 \date{\today}
 
@@ -384,6 +392,29 @@ horizontal band at its assigned frequency.
     \label{fig:spec}
 \end{figure}
 
+\subsection{Interactive Keypad and Live Updates}
+
+In addition to batch analysis, the application provides an on-screen
+\textbf{keypad} (A--Z + SPACE + Clear). Clicking a keypad button simulates a
+single key press and \emph{incrementally updates} both plots live:
+
+\begin{enumerate}
+    \item The key is appended to the accumulated sequence.
+    \item The frequency pipeline (\texttt{generate\_frequency} $\rightarrow$
+          \texttt{process\_frequency}) is executed for that key.
+    \item The spectrogram and the sine-wave plots are refreshed in place,
+          growing with each added key.
+    \item The status bar shows the latest per-key frequency, detected key,
+          error, and processing time.
+\end{enumerate}
+
+This live interaction demonstrates the real-time nature of the system: every
+key event is processed immediately, within the deadline, and the
+reconstruction evolves continuously. The \Key{Clear} button resets the
+sequence and the plots. The incremental update logic is factored into pure
+functions (\texttt{update\_spectrogram}, \texttt{update\_sine\_plot}) so it is
+independently unit-testable.
+
 % ============================================================
 % 10. EXPECTED OUTCOME
 % ============================================================
@@ -527,6 +558,9 @@ The implementation satisfies all the CPS verification requirements:
 \end{itemize}
 
 The project provides a complete, verifiable CPS model and a graphical
-interface suitable for demonstration in a project presentation.
+interface suitable for demonstration in a project presentation. The on-screen
+keypad lets a presenter type a sequence live and watch the sine and
+spectrogram plots grow with each key press, while the status bar reports the
+per-key frequency, error, and execution time in real time.
 
 \end{document}
