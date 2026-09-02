@@ -4,6 +4,7 @@ import time
 import random
 import os
 import sys
+import math
 
 
 # Allow importing from the src directory when running as a script.
@@ -236,7 +237,11 @@ def reconstruct_sequence_wcet(text, add_noise=False, trials=1):
     all_wcet.sort()
 
     median = all_wcet[len(all_wcet) // 2]
-    p95_index = max(0, int(len(all_wcet) * 0.95) - 1)
+
+    # Nearest-rank percentile: reports an exact 95th percentile for any
+    # trial count (prevents under-reporting for counts not multiple of 20).
+    n = len(all_wcet)
+    p95_index = min(math.ceil(n * 0.95) - 1, n - 1)
     p95 = all_wcet[p95_index]
 
     return (
@@ -716,7 +721,9 @@ class AcousticSideChannelApp:
 
                 self.keypad_buttons[letter] = btn
 
-        # Digits row (0-9) below the letters.
+        # Digits row (0-9) below the letters. Placed at row=5 so column 7
+        # (row 4) remains a free cell and digit "7" is not covered by the
+        # Clear button below.
         for col_idx, digit in enumerate("0123456789"):
 
             btn = ttk.Button(
@@ -727,7 +734,7 @@ class AcousticSideChannelApp:
             )
 
             btn.grid(
-                row=4,
+                row=5,
                 column=col_idx,
                 padx=2,
                 pady=2
@@ -757,6 +764,8 @@ class AcousticSideChannelApp:
             command=self.clear_live
         )
 
+        # Spans rows 2-4 (the free letter-row cells in column 7). Column 7
+        # row 5 (the digit "7" cell) stays free and clickable.
         clear_btn.grid(
             row=2,
             column=7,
@@ -868,6 +877,12 @@ class AcousticSideChannelApp:
         sine plot below) embedded in the Waveform tab. Stores the figures/axes
         on self so on_key_pressed can update them incrementally.
         """
+        import matplotlib
+        # Embedding figures in Tk requires the TkAgg backend, selected here
+        # (where the display is available) rather than in the headless-safe
+        # visualization module.
+        matplotlib.use("TkAgg")
+
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from waveform_visualization import (
             plot_spectrogram,
@@ -1031,235 +1046,25 @@ class AcousticSideChannelApp:
     # --------------------------------------------------------
 
     def analyze(self):
+        """
+        Run the full CPS analysis for the current input and display it.
 
-        self.output.delete(
-            "1.0",
-            tk.END
-        )
-
+        Delegates to format_report() so the GUI output and the exported
+        report always come from the same single code path.
+        """
         text = self.input_entry.get()
 
         self.status_var.set("Analyzing...")
         self.root.update_idletasks()
 
-        # ----------------------------------------------
-        # INVARIANT CHECK
-        # ----------------------------------------------
-
-        invariants = check_invariants()
-
-        self.output.insert(
-            tk.END,
-            "========== INVARIANT CHECK ==========\n\n"
-        )
-
-        for name, result in invariants.items():
-
-            status = "PASS" if result else "FAIL"
-
-            self.output.insert(
-                tk.END,
-                f"{name:<35} : {status}\n"
-            )
-
-        # Below is the full analysis. It needs to catch the
-        # "Unknown key" case where an invalid symbol is entered.
-
-        # Map symbols and skip invalid symbols in the same way
-        # the original code did, but also compute the correct
-        # frequency mapping for the display.
-
-        mapped = []
-
-        for character in text.upper():
-
-            if character == " ":
-                key = "SPACE"
-
-            elif character in KEY_FREQUENCIES:
-                key = character
-
-            else:
-                key = None
-
-            if key is not None:
-                mapped.append(key)
-
-        # Compute reconstruction stats. The original
-        # reconstruct_sequence filters invalid symbols itself,
-        # so use the raw text.
-        reconstructed, avg_time, wcet, avg_error = \
-            reconstruct_sequence(
-                text,
-                add_noise=self.noise_var.get()
-            )
-
-        # Multi-trial WCET for robust timing.
-        _, _, wcet_median, wcet_p95, _ = reconstruct_sequence_wcet(
+        report = format_report(
             text,
             add_noise=self.noise_var.get(),
             trials=WCET_TRIALS
         )
 
-        # ----------------------------------------------
-        # FREQUENCY MAPPING
-        # ----------------------------------------------
-
-        self.output.insert(
-            tk.END,
-            "\n========== FREQUENCY MAPPING ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"{'Key':<8}{'Freq (Hz)':>12}{'Detected':>10}"
-            f"{'Error':>10}{'Conf.':>9}{'Time (ms)':>12}\n"
-        )
-
-        for key in mapped:
-
-            frequency = generate_frequency(
-                key,
-                noise=self.noise_var.get()
-            )
-
-            detected_key, error, execution_time = \
-                process_frequency(frequency)
-
-            confidence = compute_confidence(
-                detected_key,
-                error
-            )
-
-            self.output.insert(
-                tk.END,
-                f"{key:<8}"
-                f"{frequency:12.2f}"
-                f"{detected_key:>10} "
-                f"{error:>10.2f} "
-                f"{confidence:>9.3f} "
-                f"{execution_time:>12.3f}\n"
-            )
-
-        # ----------------------------------------------
-        # RECONSTRUCTED OUTPUT
-        # ----------------------------------------------
-
-        self.output.insert(
-            tk.END,
-            "\n========== RECONSTRUCTED SEQUENCE ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            " ".join(reconstructed)
-        )
-
-        # ----------------------------------------------
-        # PERFORMANCE
-        # ----------------------------------------------
-
-        self.output.insert(
-            tk.END,
-            "\n\n========== REAL-TIME ANALYSIS ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"Average Execution Time : "
-            f"{avg_time:.4f} ms\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"Worst Case Execution Time (WCET) : "
-            f"{wcet:.4f} ms\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"WCET (median, {WCET_TRIALS} trials) : "
-            f"{wcet_median:.4f} ms\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"WCET (P95, {WCET_TRIALS} trials)    : "
-            f"{wcet_p95:.4f} ms\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"Required Deadline : "
-            f"{DEADLINE_MS:.2f} ms\n"
-        )
-
-        if wcet_p95 < DEADLINE_MS:
-
-            self.output.insert(
-                tk.END,
-                "Deadline Status : PASS\n"
-            )
-
-        else:
-
-            self.output.insert(
-                tk.END,
-                "Deadline Status : FAIL\n"
-            )
-
-        # ----------------------------------------------
-        # RANKING FUNCTION
-        # ----------------------------------------------
-
-        self.output.insert(
-            tk.END,
-            "\n========== RANKING FUNCTION ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            "V = |Detected Frequency - Expected Frequency|\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            f"Average V = {avg_error:.4f} Hz\n"
-        )
-
-        # ----------------------------------------------
-        # LIVENESS
-        # ----------------------------------------------
-
-        live = liveness_test()
-
-        self.output.insert(
-            tk.END,
-            "\n========== LIVENESS ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            "System can process new input : "
-            + ("PASS\n" if live else "FAIL\n")
-        )
-
-        # ----------------------------------------------
-        # TERMINATION
-        # ----------------------------------------------
-
-        terminated = termination_test()
-
-        self.output.insert(
-            tk.END,
-            "\n========== TERMINATION ==========\n\n"
-        )
-
-        self.output.insert(
-            tk.END,
-            "Finite processing terminates : "
-            + ("PASS\n" if terminated else "FAIL\n")
-        )
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, report)
 
         self.status_var.set("Analysis complete")
 
