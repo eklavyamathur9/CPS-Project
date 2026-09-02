@@ -47,7 +47,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram plots
 ├── tests/
-│   └── test_frequency.py             # 28 unit tests covering CPS invariants
+│   └── test_frequency.py             # 40 unit tests covering CPS invariants
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report
@@ -70,9 +70,10 @@ CPSProject/
 | Hardware | Computer only, no microphone |
 | Frequency signature | Custom frequency per key (KEY_FREQUENCIES) |
 | Real-time task | Frequency -> key processing |
-| WCET | Maximum measured processing time |
+| WCET | Robust multi-trial median + P95 (WCET_TRIALS) |
 | Deadline | 50 ms (DEADLINE_MS) |
 | Tolerance | 8 Hz (TOLERANCE) |
+| Confidence | 1 - (error / TOLERANCE), clamped to [0, 1] |
 | Invariant | Unique/valid frequency mapping |
 | Liveness | System continues accepting inputs |
 | Termination | Finite sequence finishes |

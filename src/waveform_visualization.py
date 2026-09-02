@@ -12,9 +12,10 @@ they can be embedded into tkinter via FigureCanvasTkAgg, or saved to disk.
 
 import numpy as np
 import matplotlib
-matplotlib.use("TkAgg")
 
 import matplotlib.pyplot as plt
+import os
+import time
 
 from acoustic_side_channel import KEY_FREQUENCIES
 
@@ -122,8 +123,8 @@ def compute_spectrogram(keys, noise=False):
         spectrum = np.abs(np.fft.rfft(frame))
         freqs = np.fft.rfftfreq(window, 1.0 / SAMPLE_RATE)
 
-        # Only keep the band of interest (400-1300 Hz) for clarity.
-        mask = (freqs >= 350) & (freqs <= 1300)
+        # Only keep the band of interest (350-1600 Hz) for clarity.
+        mask = (freqs >= 350) & (freqs <= 1600)
         frequencies.append(freqs[mask])
         times.append(start / SAMPLE_RATE)
         magnitudes.append(spectrum[mask])
@@ -181,7 +182,7 @@ def plot_spectrogram(keys, title="Frequency Spectrogram", noise=False):
 
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Frequency (Hz)")
-    ax.set_ylim(350, 1300)
+    ax.set_ylim(350, 1600)
     ax.grid(True, alpha=0.2)
 
     fig.suptitle(title, fontsize=13, fontweight="bold")
@@ -277,17 +278,49 @@ def update_sine_plot(fig, axes, keys, noise=False):
     return True
 
 
+def _unique_path(directory, name):
+    """
+    Return a file path under `directory` that does not already exist.
+
+    If `name` is already taken, a timestamped variant is used (e.g.
+    "waveform_sine_20260901_103000.png") so committed/other figures are
+    never silently overwritten.
+    """
+    path = os.path.join(directory, name)
+
+    if not os.path.exists(path):
+        return path
+
+    base, ext = os.path.splitext(name)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+
+    candidate = os.path.join(directory, f"{base}_{stamp}{ext}")
+
+    # Collision on the timestamped name (unlikely, but keep trying).
+    counter = 1
+    while os.path.exists(candidate):
+        candidate = os.path.join(
+            directory,
+            f"{base}_{stamp}_{counter}{ext}"
+        )
+        counter += 1
+
+    return candidate
+
+
 def save_visualizations(keys, directory=".", noise=False):
     """
     Save both sine-wave and spectrogram figures as PNG files.
 
-    Returns the list of files created.
+    Uses non-colliding filenames so existing PNGs are never overwritten.
+
+    Returns the list of file paths created (sine, then spectrogram).
     """
     sine_fig = plot_sine_waves(keys, noise=noise)
     spec_fig = plot_spectrogram(keys, noise=noise)
 
-    sine_path = f"{directory}/waveform_sine.png"
-    spec_path = f"{directory}/waveform_spectrogram.png"
+    sine_path = _unique_path(directory, "waveform_sine.png")
+    spec_path = _unique_path(directory, "waveform_spectrogram.png")
 
     sine_fig.savefig(sine_path, dpi=150)
     spec_fig.savefig(spec_path, dpi=150)

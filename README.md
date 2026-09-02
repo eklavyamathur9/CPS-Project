@@ -13,12 +13,14 @@ software, **without a microphone or audio capture hardware**.
 
 ## Features
 
-- **Custom frequency database**: 27 keys (A–Z + SPACE), each with a unique frequency.
+- **Custom frequency database**: 37 keys (A–Z + 0–9 + SPACE), each with a unique frequency.
 - **Software frequency generation**: synthetic signal with optional measurement noise.
 - **Frequency analysis & matching**: nearest-frequency classification with a tolerance.
+- **Statistical confidence**: per-key confidence score (0.0–1.0) derived from the detection error.
 - **Keystroke reconstruction**: rebuilds the typed sequence from detected frequencies.
 - **CPS verification**:
   - WCET / average execution time measurement
+  - Robust multi-trial timing (median + P95 WCET)
   - Deadline checking (50 ms)
   - Invariant checking (positive, unique, valid frequencies)
   - Liveness and termination tests
@@ -27,10 +29,13 @@ software, **without a microphone or audio capture hardware**.
 - **Waveform visualization**:
   - Sine waveform per key
   - Simulated frequency spectrogram
-  - **Live incremental updates**: an on-screen keypad (A–Z + SPACE + Clear)
+  - **Live incremental updates**: an on-screen keypad (A–Z + 0–9 + SPACE + Clear)
     appends each key press and grows the plots in real time
 - **On-screen keypad**: click keys to build a sequence live; each press updates
   both plots incrementally
+- **Export report**: save the full analysis as a text file, optionally with
+  the waveform plots (PNG)
+- **Copy results**: copy the analysis output to the clipboard
 
 ---
 
@@ -61,9 +66,9 @@ use the on-screen **keypad**: every key click appends to the sequence and
 
 The analysis tab reports:
 - Invariant check results
-- Per-key frequency mapping
+- Per-key frequency mapping (with statistical confidence)
 - Reconstructed sequence
-- Real-time analysis (avg time, WCET, deadline pass/fail)
+- Real-time analysis (avg time, median/P95 WCET, deadline pass/fail)
 - Ranking function V
 - Liveness and termination results
 
@@ -73,6 +78,10 @@ The waveform tab displays:
 
 Both plots grow live as you click keypad keys (use **Clear** to reset).
 
+Use the **Export Report** button to save the full analysis as a text file
+(optionally including the waveform PNG plots), and **Copy Result** to copy the
+analysis output to the clipboard.
+
 ---
 
 ## Running the Tests
@@ -81,9 +90,9 @@ Both plots grow live as you click keypad keys (use **Clear** to reset).
 python3 -m pytest tests/ -v
 ```
 
-28 unit tests cover the CPS invariants, identification, reconstruction,
-deadline, liveness, termination, key mapping, and the incremental waveform
-helpers.
+40 unit tests cover the CPS invariants, identification, reconstruction,
+deadline, liveness, termination, key mapping, statistical confidence,
+multi-trial WCET, report export, and the incremental waveform helpers.
 
 ---
 
@@ -109,7 +118,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic + keypad GUI
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram + live updaters
 ├── tests/
-│   └── test_frequency.py             # 28 unit tests
+│   └── test_frequency.py             # 40 unit tests
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report
@@ -143,7 +152,12 @@ CPSProject/
 | K | 740 | X | 1130 |
 | L | 770 | Y | 1160 |
 | M | 800 | Z | 1190 |
-| SPACE | 1220 | | |
+| SPACE | 1220 | 0 | 1250 |
+| 1 | 1280 | 2 | 1310 |
+| 3 | 1340 | 4 | 1370 |
+| 5 | 1400 | 6 | 1430 |
+| 7 | 1460 | 8 | 1490 |
+| 9 | 1520 | | |
 
 ---
 
