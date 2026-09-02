@@ -90,7 +90,7 @@ analysis output to the clipboard.
 python3 -m pytest tests/ -v
 ```
 
-40 unit tests cover the CPS invariants, identification, reconstruction,
+47 unit tests cover the CPS invariants, identification, reconstruction,
 deadline, liveness, termination, key mapping, statistical confidence,
 multi-trial WCET, report export, and the incremental waveform helpers.
 
@@ -118,7 +118,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic + keypad GUI
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram + live updaters
 ├── tests/
-│   └── test_frequency.py             # 40 unit tests
+│   └── test_frequency.py             # 47 unit tests
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report

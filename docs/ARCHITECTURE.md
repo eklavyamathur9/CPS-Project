@@ -42,9 +42,10 @@ The main application and core logic engine.
 
 | Constant | Value | Purpose |
 |---|---|---|
-| `KEY_FREQUENCIES` | dict | Key → frequency mapping (27 keys) |
+| `KEY_FREQUENCIES` | dict | Key → frequency mapping (37 keys: A–Z, 0–9, SPACE) |
 | `TOLERANCE` | 8.0 | Max accepted frequency error (Hz) |
 | `DEADLINE_MS` | 50.0 | Real-time deadline (ms) |
+| `WCET_TRIALS` | 20 | Number of trials for robust median/P95 WCET |
 
 **Core functions**
 
@@ -55,18 +56,26 @@ The main application and core logic engine.
 | `identify_key(frequency)` | Nearest-frequency classification (returns key or UNKNOWN) |
 | `process_frequency(frequency)` | Full pipeline: analysis + matching + timing |
 | `reconstruct_sequence(text, noise)` | Reconstructs a full sequence, returns stats |
+| `reconstruct_sequence_wcet(text, noise, trials)` | Multi-trial WCET: returns median + P95 |
+| `compute_confidence(key, error)` | Per-key confidence score in [0, 1] |
+| `sequence_details(text, noise)` | Per-key frequency/error/time/confidence list |
+| `format_report(text, noise, trials)` | Single report builder for GUI + export |
+| `export_report(text, path, ...)` | Writes the report to a text file (optional PNGs) |
 | `liveness_test()` | Verifies the system can process new input |
 | `termination_test()` | Verifies a finite sequence terminates |
 | `keys_from_text(text)` | Converts text to a list of key symbols |
 | `key_from_char(char)` | Maps a single character to a key symbol (or None) |
 
 **GUI class**: `AcousticSideChannelApp`
-- Manages the tkinter interface with two tabs (Analysis, Waveform).
-- Provides an on-screen **keypad** (A–Z + SPACE + Clear) whose buttons append
-  keys incrementally.
+- Manages the tkinter interface with two tabs (Analysis, Waveform), a File menu
+  (Export Report, Copy Results), and an on-screen **keypad** (A–Z + 0–9 +
+  SPACE + Clear) whose buttons append keys incrementally.
 - `on_key_pressed(key)` appends a key, syncs the entry text, runs the per-key
   pipeline, and updates the waveform plots **live** on each press.
-- `analyze()` runs the full analysis and writes results to the text output.
+- `analyze()` runs the full analysis by delegating to `format_report()` and
+  writes the result to the text output.
+- `export_report()` saves the report to disk (optionally with PNG plots).
+- `copy_result()` copies the current output to the clipboard.
 - `show_visualization()` / `_build_live_canvas()` build a reusable two-panel
   figure (spectrogram + sine) that incremental updates keep refreshing.
 - `clear_live()` resets the accumulated keys, entry, and live canvas.
@@ -84,6 +93,7 @@ The visualization module using matplotlib and numpy.
 | `update_sine_plot(fig, axes, keys, noise)` | Incrementally refreshes the sine plot for a growing key list |
 | `update_spectrogram(fig, ax, keys, noise)` | Incrementally refreshes the spectrogram for a growing key list |
 | `save_visualizations(keys, dir)` | Saves both plots as PNG files |
+| `_unique_path(directory, name)` | Returns a non-colliding (timestamped) file path |
 
 ## Data Flow
 
@@ -102,7 +112,13 @@ process_frequency(freq) ──► (detected_key, error, time_ms)
    │                        ├── identify_key ──► nearest match (V = |Δf|)
    │                        └── timing (WCET collection)
    ▼
-reconstruct_sequence ──► (reconstructed[], avg_time, wcet, avg_error)
+compute_confidence(key, error) ──► C = 1 − error/TOLERANCE (clamped [0,1])
+   │
+   ▼
+format_report ──► single report string (GUI output + exported file)
+   │
+   ▼
+reconstruct_sequence_wcet ──► (median, P95) across WCET_TRIALS trials
 ```
 
 ## CPS Verification Mapping
@@ -111,14 +127,15 @@ reconstruct_sequence ──► (reconstructed[], avg_time, wcet, avg_error)
 |---|---|
 | Application | `AcousticSideChannelApp` |
 | Real-time task | `process_frequency` |
-| WCET | `reconstruct_sequence` → `worst_case` |
+| WCET | `reconstruct_sequence_wcet` → median + P95 over `WCET_TRIALS` |
 | Deadline | `DEADLINE_MS` constant + pass/fail display |
 | Invariants | `check_invariants()` |
 | Liveness | `liveness_test()` |
 | Termination | `termination_test()` |
 | Ranking function | `identify_key` → `smallest_error` (V) |
+| Confidence | `compute_confidence` → 1 − V/TOLERANCE |
 | Safety | `identify_key` returns `"UNKNOWN"` when out of tolerance |
-| Outcome | `reconstruct_sequence` returns `reconstructed[]` |
+| Outcome | `format_report` → reconstructed sequence + stats |
 
 ## Dependencies
 

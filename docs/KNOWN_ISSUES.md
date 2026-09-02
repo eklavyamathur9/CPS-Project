@@ -32,9 +32,10 @@ it behaves consistently with the rest of the table.
 
 ### 5. Unknown Variants
 
-If the user enters characters outside A–Z and space (e.g., digits,
-punctuation), they are silently skipped by `reconstruct_sequence` and
-`keys_from_text`. They are not treated as keys or shown as UNKNOWN.
+If the user enters characters outside the supported keys (A–Z, 0–9, and
+space) — e.g., punctuation or symbols — they are silently skipped by
+`reconstruct_sequence` and `keys_from_text`. They are not treated as keys or
+shown as UNKNOWN.
 
 ### 6. Timing Resolution
 
@@ -55,7 +56,8 @@ launch the app (though tests and the waveform module work headlessly).
 |---|---|
 | Empty string | No keys; zero average time/error; GUI shows no mapping lines |
 | Lowercase letters | Converted to uppercase |
-| Digits / punctuation | Skipped silently |
+| Digits | Mapped to digit keys 0–9 (supported) |
+| Punctuation / symbols | Skipped silently |
 | Out-of-tolerance frequency | `identify_key` returns `"UNKNOWN"` |
 | Very long sequence | Processes each key independently; linear O(n) in keys |
 
@@ -65,10 +67,11 @@ launch the app (though tests and the waveform module work headlessly).
 
 - Real acoustic FFT analysis (requires a microphone — conflicts with the
   software-only design constraint).
-- Support for digits, function keys, and shift/ctrl modifiers.
+- Support for function keys, shift/ctrl modifiers, and punctuation.
 - More sophisticated noise/error models (Gaussian, burst errors).
-- Statistical confidence reporting per detected key.
-- Better timing methodology (multiple trials, median + percentile WCET).
+
+> Note: digit keys (0–9), per-key statistical confidence, and robust
+> multi-trial WCET (median + P95) are now implemented and covered by tests.
 
 ---
 

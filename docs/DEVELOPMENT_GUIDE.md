@@ -26,10 +26,10 @@ The GUI opens with two tabs:
 - **Waveform**: sine + spectrogram plots (generated via the "Visualize
   Waveform" button).
 
-There is also an on-screen **keypad** (A–Z + SPACE + Clear). Clicking a keypad
-button appends the key to the accumulated sequence and **incrementally updates
-the waveform plots live** on every key press. The status bar shows the latest
-per-key frequency, detected key, error, and processing time.
+There is also an on-screen **keypad** (A–Z + 0–9 + SPACE + Clear). Clicking a
+keypad button appends the key to the accumulated sequence and **incrementally
+updates the waveform plots live** on every key press. The status bar shows the
+latest per-key frequency, detected key, error, and processing time.
 
 ---
 
@@ -99,7 +99,7 @@ Functions in `src/waveform_visualization.py`:
   report.
 
 To change the plotted frequency band in the spectrogram, adjust the mask
-`(freqs >= 350) & (freqs <= 1300)`.
+`(freqs >= 350) & (freqs <= 1600)`.
 
 ---
 
@@ -121,15 +121,19 @@ pdflatex report.tex
 ```
 
 The report embeds `waveform_sine.png` and `waveform_spectrogram.png` from the
-`docs/` directory. Regenerate them if you change keys or the sequence:
+`docs/` directory. Regenerate them if you change keys or the sequence. Note
+that `save_visualizations` writes timestamped filenames to avoid overwriting,
+so to refresh the tracked report figures, save the plots directly to the
+canonical `waveform_sine.png` / `waveform_spectrogram.png` paths:
 
 ```bash
 cd src
 python3 -c "
 import matplotlib; matplotlib.use('Agg')
-from waveform_visualization import save_visualizations
-save_visualizations(['H','E','L','L','O','SPACE','W','O','R','L','D'],
-                    directory='../docs', noise=True)
+from waveform_visualization import plot_sine_waves, plot_spectrogram
+keys = ['H','E','L','L','O','SPACE','W','O','R','L','D']
+plot_sine_waves(keys, noise=False).savefig('../docs/waveform_sine.png', dpi=150)
+plot_spectrogram(keys, noise=False).savefig('../docs/waveform_spectrogram.png', dpi=150)
 "
 ```
 
