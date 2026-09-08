@@ -26,10 +26,13 @@ The GUI opens with two tabs:
 - **Waveform**: sine + spectrogram plots (generated via the "Visualize
   Waveform" button).
 
-There is also an on-screen **keypad** (A–Z + 0–9 + SPACE + Clear). Clicking a
-keypad button appends the key to the accumulated sequence and **incrementally
-updates the waveform plots live** on every key press. The status bar shows the
-latest per-key frequency, detected key, error, and processing time.
+Typed or pasted input goes into a **multi-line text area** and can be a full
+paragraph. Only valid keys (A–Z, 0–9, SPACE) are processed; newlines and
+unsupported characters are skipped. The keypad (A–Z + 0–9 + SPACE + Clear) is
+for live, single-key demonstration: clicking a keypad button appends the key to
+the sequence and **incrementally updates the waveform plots live** on every
+key press. The status bar shows the latest per-key frequency, detected key,
+error, and processing time.
 
 ---
 
@@ -37,7 +40,7 @@ latest per-key frequency, detected key, error, and processing time.
 
 Each keypad press calls `on_key_pressed(key)` in the GUI, which:
 1. Appends the key to `self.pressed_keys`.
-2. Syncs the entry text.
+2. Appends the key's character to the end of the input text (`insert(tk.END)`).
 3. Runs the per-key pipeline (`generate_frequency` → `process_frequency`).
 4. Calls `update_spectrogram()` and `update_sine_plot()` on the existing
    figures so the plots grow with each key (no full redraw of the window).
@@ -97,6 +100,9 @@ Functions in `src/waveform_visualization.py`:
 - `plot_spectrogram(keys, title, noise)` — returns a matplotlib `Figure`.
 - `save_visualizations(keys, directory, noise)` — saves PNGs, used by the
   report.
+- `MAX_PLOT_KEYS` — all plot/update functions render only the first
+  `MAX_PLOT_KEYS` keys so long paragraph inputs cannot stall the GUI. The
+  analysis/report always covers the full sequence.
 
 To change the plotted frequency band in the spectrogram, adjust the mask
 `(freqs >= 350) & (freqs <= 1600)`.

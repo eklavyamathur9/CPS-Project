@@ -17,15 +17,16 @@ session.
 |---|---|---|
 | Core logic (key/frequency DB, matching, invariants, liveness, termination) | `src/acoustic_side_channel.py` | DONE |
 | GUI (tabs: Analysis + Waveform, noise toggle, analyze + visualize buttons) | `src/acoustic_side_channel.py` | DONE |
+| Multi-line paragraph input (tk.Text + scrollbar; newlines skipped) | `src/acoustic_side_channel.py` | DONE |
 | On-screen keypad with live incremental waveform updates | `src/acoustic_side_channel.py` | DONE |
-| Waveform visualization (sine + spectrogram) | `src/waveform_visualization.py` | DONE |
+| Waveform visualization (sine + spectrogram) with MAX_PLOT_KEYS cap | `src/waveform_visualization.py` | DONE |
 | Incremental updaters (update_sine_plot, update_spectrogram) | `src/waveform_visualization.py` | DONE |
 
 ## Tests
 
 | Test file | Count | Status |
 |---|---|---|
-| `tests/test_frequency.py` | 28 | DONE (all passing) |
+| `tests/test_frequency.py` | 56 | DONE (all passing) |
 
 ## Documentation
 
@@ -44,7 +45,7 @@ session.
 | File | Status |
 |---|---|
 | `docs/report.tex` | DONE |
-| `docs/report.pdf` (9 pages, A4) | DONE |
+| `docs/report.pdf` (11 pages, A4) | DONE |
 
 ## Memory
 
@@ -62,7 +63,7 @@ session.
 
 ```bash
 python3 -m pytest tests/ -v
-# 28 passed
+# 56 passed
 ```
 
 ### Report Compilation
@@ -70,7 +71,7 @@ python3 -m pytest tests/ -v
 ```bash
 cd docs
 pdflatex report.tex
-# report.pdf, 9 pages, no warnings
+# report.pdf, 11 pages, no warnings
 ```
 
 ### Visualization

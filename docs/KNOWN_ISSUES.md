@@ -48,6 +48,12 @@ rather than the algorithm itself.
 The tkinter GUI requires a graphical display. Headless environments cannot
 launch the app (though tests and the waveform module work headlessly).
 
+### 8. Waveform Plots Cap Long Paragraphs at 30 Keys
+
+To stay responsive, the waveform plots render only the first `MAX_PLOT_KEYS`
+(30) keys of any input. The text analysis and exported report still cover the
+full paragraph; only the visualizations are capped.
+
 ---
 
 ## Edge Cases
@@ -58,6 +64,9 @@ launch the app (though tests and the waveform module work headlessly).
 | Lowercase letters | Converted to uppercase |
 | Digits | Mapped to digit keys 0–9 (supported) |
 | Punctuation / symbols | Skipped silently |
+| Newlines (`\n`, `\r\n`) | Skipped silently (paragraph input) |
+| Leading/trailing spaces | Preserved and reconstructed as SPACE keys |
+| Paragraph longer than 30 keys | Full analysis; plots show first 30 keys |
 | Out-of-tolerance frequency | `identify_key` returns `"UNKNOWN"` |
 | Very long sequence | Processes each key independently; linear O(n) in keys |
 
