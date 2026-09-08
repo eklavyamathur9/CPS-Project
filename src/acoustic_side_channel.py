@@ -57,7 +57,19 @@ KEY_FREQUENCIES = {
     "6": 1430.0,
     "7": 1460.0,
     "8": 1490.0,
-    "9": 1520.0
+    "9": 1520.0,
+
+    ".": 1550.0,
+    ",": 1580.0,
+    "!": 1610.0,
+    "?": 1640.0,
+    ";": 1670.0,
+    ":": 1700.0,
+    "'": 1730.0,
+    '"': 1760.0,
+    "(": 1790.0,
+    ")": 1820.0,
+    "-": 1850.0
 }
 
 
@@ -409,10 +421,11 @@ def key_from_char(character):
     """
     Map a single character to a key symbol.
 
-    - " "     -> "SPACE"
-    - letter  -> uppercase letter (if it has a frequency)
-    - digit   -> the digit character
-    - else    -> None (not a valid key)
+    - " "         -> "SPACE"
+    - letter      -> uppercase letter (if it has a frequency)
+    - digit       -> the digit character
+    - punctuation -> the punctuation character (if it has a frequency)
+    - else         -> None (not a valid key)
     """
     if character == " ":
         return "SPACE"

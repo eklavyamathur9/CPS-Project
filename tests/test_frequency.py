@@ -166,9 +166,9 @@ def test_sequence_reconstruction_hello():
 
 
 def test_sequence_reconstruction_invlalid_chars_skipped():
-    """Non-alphanumeric/invalid chars are skipped in reconstruction."""
-    reconstructed, _, _, _ = reconstruct_sequence("A1B!C ", add_noise=False)
-    assert reconstructed == ["A", "1", "B", "C", "SPACE"]
+    """Unmapped characters are skipped in reconstruction."""
+    reconstructed, _, _, _ = reconstruct_sequence("A1B!C @", add_noise=False)
+    assert reconstructed == ["A", "1", "B", "!", "C", "SPACE"]
 
 
 def test_sequence_reconstruction_with_noise():
@@ -180,6 +180,73 @@ def test_sequence_reconstruction_with_noise():
 def test_keys_from_text_handles_spaces():
     """keys_from_text() converts spaces to SPACE keys."""
     assert keys_from_text("A B") == ["A", "SPACE", "B"]
+
+
+# ----------------------------------------------------------
+# PUNCTUATION KEYS
+# ----------------------------------------------------------
+
+PUNCTUATION_FREQUENCIES = {
+    ".": 1550.0,
+    ",": 1580.0,
+    "!": 1610.0,
+    "?": 1640.0,
+    ";": 1670.0,
+    ":": 1700.0,
+    "'": 1730.0,
+    '"': 1760.0,
+    "(": 1790.0,
+    ")": 1820.0,
+    "-": 1850.0,
+}
+
+
+def test_database_contains_full_key_set():
+    """KEY_FREQUENCIES covers letters, digits, SPACE and punctuation."""
+    assert len(KEY_FREQUENCIES) == 48
+    assert set(PUNCTUATION_FREQUENCIES).issubset(set(KEY_FREQUENCIES))
+
+
+def test_frequency_range_covers_punctuation():
+    """Frequencies span 440-1850 Hz with unique spacing."""
+    frequencies = list(KEY_FREQUENCIES.values())
+    assert min(frequencies) == 440.0
+    assert max(frequencies) == 1850.0
+    assert len(set(frequencies)) == len(frequencies)
+
+
+def test_key_from_char_maps_all_punctuation():
+    """Every curated punctuation character maps to a key."""
+    for character in PUNCTUATION_FREQUENCIES:
+        assert key_from_char(character) == character
+
+
+def test_keys_from_text_keeps_punctuation_and_drops_unmapped():
+    """Punctuation keys are preserved; unmapped symbols are still skipped."""
+    assert keys_from_text("A,B. C@") == ["A", ",", "B", ".", "SPACE", "C"]
+    assert keys_from_text("what? #done/path") == [
+        "W", "H", "A", "T", "?", "SPACE", "D", "O", "N", "E", "P", "A", "T", "H"
+    ]
+
+
+def test_punctuated_sentence_reconstruction():
+    """A real sentence with punctuation reconstructs completely."""
+    reconstructed, _, _, _ = reconstruct_sequence(
+        "Ready, set, go!", add_noise=False
+    )
+    assert reconstructed == [
+        "R", "E", "A", "D", "Y", ",", "SPACE",
+        "S", "E", "T", ",", "SPACE",
+        "G", "O", "!"
+    ]
+
+
+def test_punctuation_identified_back_to_key():
+    """Punctuation frequencies resolve to their key."""
+    for character, frequency in PUNCTUATION_FREQUENCIES.items():
+        detected, error = identify_key(frequency + TOLERANCE)
+        assert detected == character
+        assert error <= TOLERANCE
 
 
 # ----------------------------------------------------------
@@ -213,13 +280,13 @@ def test_paragraph_reconstruction_matches_flattened():
 
 
 def test_sequence_reconstruction_multiline_preserves_only_valid_keys():
-    """Newlines and punctuation are skipped; only valid keys remain."""
+    """Newlines and unmapped chars are skipped; valid keys remain."""
     paragraph = "The quick brown fox\njumps over 123!"
     reconstructed, _, _, _ = reconstruct_sequence(paragraph, add_noise=False)
     expected = ["T", "H", "E", "SPACE", "Q", "U", "I", "C", "K", "SPACE",
                 "B", "R", "O", "W", "N", "SPACE", "F", "O", "X",
                 "J", "U", "M", "P", "S", "SPACE", "O", "V", "E", "R",
-                "SPACE", "1", "2", "3"]
+                "SPACE", "1", "2", "3", "!"]
     assert reconstructed == expected
 
 
@@ -319,8 +386,8 @@ def test_key_from_char_space():
 
 
 def test_key_from_char_invalid():
-    """A non-key character maps to None."""
-    assert key_from_char("!") is None
+    """An unmapped character maps to None."""
+    assert key_from_char("@") is None
     assert key_from_char("") is None
 
 
