@@ -51,6 +51,9 @@
 \titleformat{\section}{\Large\bfseries}{\thesection.}{0.6em}{}
 \titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.6em}{}
 
+% Every top-level section (and the bibliography) starts on a fresh page.
+\newcommand{\sectionbreak}{\clearpage}
+
 % ============================================================
 % DOCUMENT
 % ============================================================
@@ -87,17 +90,97 @@
     \rule{\textwidth}{0.4pt}
 \end{center}
 
+\clearpage
 \tableofcontents
-\newpage
+\listoffigures
+\listoftables
+\clearpage
 
 % ============================================================
-% 1. UNDERSTANDING THE PROJECT
+% 1. TEAM ROLES AND CONTRIBUTIONS
+% ============================================================
+\section{Team Roles and Contributions}
+\label{sec:roles}
+
+This project was carried out by a five-member team. The work was partitioned so
+that two members carried the core of the system and the remaining three each
+owned a well-defined supporting component. \textbf{Eklavya Mathur} was
+responsible for the real-time reconstruction engine and the formal
+Cyber-Physical Systems (CPS) verification layer. \textbf{Himalaya Yadav} was
+responsible for the frequency-signature model, the waveform and spectrogram
+visualization, and the security analysis. \textbf{Dev Soni} implemented the
+graphical user interface, \textbf{Shreyansh Tripathi} built the automated test
+suite, and \textbf{Akshit Agrawal} implemented the on-screen keypad and
+punctuation support and maintained the project documentation. The majority of
+the design, implementation, and analysis effort---the core engine, the CPS
+verification, the signal model, the visualization, and the security
+analysis---was carried jointly by Eklavya Mathur and Himalaya Yadav; the GUI,
+the test suite, and the keypad, punctuation, and documentation work were divided
+among the other three members. All five members took part in the design
+discussions, code reviews, and the proofreading of this report.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}p{3.2cm}p{3.3cm}p{8.0cm}@{}}
+        \toprule
+        \textbf{Member (ID)} & \textbf{Primary role} &
+        \textbf{Principal contributions} \\
+        \midrule
+        Eklavya Mathur\newline (23MEI10070) &
+        \emph{Lead} --- real-time engine and CPS verification &
+        Overall system architecture; core reconstruction pipeline
+        (\texttt{identify\_key} ranking function, \texttt{process\_frequency},
+        \texttt{reconstruct\_sequence}); robust multi-trial WCET
+        (median + P95) measurement and deadline checking;
+        \texttt{check\_invariants}, \texttt{liveness\_test},
+        \texttt{termination\_test}; deterministic separation proof, complexity
+        analysis, and the ranking/variant-function termination argument;
+        optimization flow; integration and authoring of this report. \\
+        \midrule
+        Himalaya Yadav\newline (23MEI10069) &
+        \emph{Lead} --- signal model, visualization, and security &
+        Design of the 48-key \texttt{KEY\_FREQUENCIES} table on the 30~Hz grid;
+        \texttt{generate\_frequency} and the $\pm 5$~Hz bounded-noise model;
+        \texttt{waveform\_visualization.py} (numpy-vectorised sine synthesis,
+        sliding Hann-windowed FFT spectrogram, incremental live updaters);
+        \texttt{make\_figures.py} deterministic figure generator; threat model,
+        mitigation survey, and the related-work comparison. \\
+        \midrule
+        Dev Soni\newline (23MEI10066) &
+        \emph{Support} --- graphical user interface &
+        \texttt{AcousticSideChannelApp} tkinter shell; multi-line paragraph
+        input box; Analysis and Waveform tabs; wiring of keypad events to the
+        live plots; the display path of the single-source
+        \texttt{format\_report()}. \\
+        \midrule
+        Shreyansh Tripathi\newline (23MEI10067) &
+        \emph{Support} --- automated test suite &
+        \texttt{tests/test\_frequency.py} (62 tests): invariant, ranking,
+        pipeline, sequence, and multi-line paragraph reconstruction tests, plus
+        headless GUI-helper tests using a stubbed application object; the
+        requirement-to-test traceability matrix. \\
+        \midrule
+        Akshit Agrawal\newline (23MEI10085) &
+        \emph{Support} --- keypad, punctuation, and documentation &
+        On-screen keypad with append-at-\texttt{END} behaviour; the 11
+        punctuation signatures and their tests; widening of the spectrogram
+        band to 1900~Hz; \texttt{README}, \texttt{requirements.txt}, and the
+        \texttt{docs/} guides; formatting and proofreading of this report. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Division of work among the team members.}
+    \label{tab:roles}
+\end{table}
+
+% ============================================================
+% 2. UNDERSTANDING THE PROJECT
 % ============================================================
 \section{Understanding the Project}
+\label{sec:understanding}
 
 This section introduces the project, identifies the system aspect it targets,
-defines the key technical terms used throughout the report, and states the
-problem in a concise form.
+defines the key technical terms used throughout the report, states the problem
+in a concise form, and lays out the structure of the rest of the document.
 
 \subsection{Targeted System Aspect}
 
@@ -178,7 +261,8 @@ single line each.
             tolerance, preventing incorrect classification. \\
         Ranking function & The error metric $V = |F_d - F_e|$ (absolute
             difference between detected and expected frequency) that the
-            matcher minimises. \\
+            matcher minimises and that also serves as a variant function for
+            termination. \\
         \bottomrule
     \end{tabular}
     \caption{Key technical terms used in the report.}
@@ -232,18 +316,32 @@ the boundary explicit.
     \label{tab:isnot}
 \end{table}
 
-% ============================================================
-% 2. TECHNICAL CONTEXT OF THE PROJECT
-% ============================================================
-\section{Technical Context of the Project}
+\subsection{Structure of This Report}
 
-This section explains \emph{why} the approach works, why it matters for
-embedded and cyber-physical systems, and how the project is implemented.
+The remainder of the report follows the project brief. Sections~\ref{sec:principle}
+to~\ref{sec:conclusion} together form the \emph{technical context} of the
+project: Section~\ref{sec:principle} states the underlying principle (why the
+approach works, not just what it is), Section~\ref{sec:whycps} explains why it
+matters for embedded and cyber-physical systems, Section~\ref{sec:impl}
+describes the implementation (architecture, flowchart, hardware, and software
+design), Section~\ref{sec:results} presents the testing methodology and results
+as tables and figures, Section~\ref{sec:analysis} gives the analysis and
+evaluation (theory, statistics, an aspect-by-aspect assessment, problems, bugs,
+optimization, and limitations), and Section~\ref{sec:conclusion} concludes. A
+short bibliography follows.
 
-\subsection{Underlying Principle}
+% ============================================================
+% 3. UNDERLYING PRINCIPLE
+% ============================================================
+\section{Underlying Principle}
 \label{sec:principle}
 
-\subsubsection{Why a Frequency Signature Can Identify a Key}
+This section explains \emph{why} the approach works: why a frequency signature
+can identify a key, how the idea relates to the published literature on acoustic
+side channels, and how the physical idea is distilled into a tractable model
+with a provable separation margin.
+
+\subsection{Why a Frequency Signature Can Identify a Key}
 
 The central idea is that every key on a keyboard has a characteristic acoustic
 signature. In a real physical system, pressing different keys produces slightly
@@ -252,7 +350,8 @@ distance, and resonates through the keyboard chassis differently. These
 differences manifest as measurable differences in the frequency content of the
 sound.
 
-\subsubsection{Background: acoustic side-channel attacks}
+\subsection{Related Work: Acoustic Side-Channel Attacks}
+\label{sec:related-bg}
 
 The concept of extracting keystrokes from acoustic emanations is not new.
 Asonov and Agrawal (2004) were among the first to demonstrate \emph{keyboard
@@ -267,7 +366,8 @@ $95\%$ when trained on keystrokes recorded by a smartphone and $93\%$ when
 trained on audio compressed through the Zoom video-conferencing codec. Public
 toolkits such as Gerganov's \texttt{kbd-audio} (``KeyTap'') reconstruct
 keystrokes in real time by matching recorded audio against per-key
-\emph{fingerprints} learned from a known transcript.
+\emph{fingerprints} learned from a known transcript. A quantitative comparison
+of this project with these works is given in Section~\ref{sec:related}.
 
 These works establish two important facts for this project's context:
 
@@ -289,7 +389,9 @@ frequencies so that classification reduces to unambiguous nearest-frequency
 matching. The result is a faithful demonstration of the \emph{concept} and of
 the CPS verification layer, without pretending to model real signal physics.
 
-This project distils that physical idea into a clean, tractable model. Rather
+\subsection{From Physical Idea to Model}
+
+This project distils the physical idea into a clean, tractable model. Rather
 than deriving frequencies from real recordings, each key is assigned a
 predefined, \emph{unique} frequency following a regular pattern:
 
@@ -322,7 +424,7 @@ frequency, the reconstruction would become ambiguous. The separation margin is
 therefore the root cause of the system's correctness: it is this margin, not
 any particular frequency value, that makes identification reliable.
 
-\subsubsection{The Matching Rule}
+\subsection{The Matching Rule}
 
 Given a detected frequency $F_{\text{detected}}$, the matcher computes an error
 for every candidate key:
@@ -343,14 +445,18 @@ The \Key{UNKNOWN} result is a deliberate safety measure: the software never
 forces an incorrect key when no signature is close enough. This is the single
 most important design principle for the security aspect of the system.
 
-\subsection{Why This Matters for Embedded and Cyber-Physical Systems}
+% ============================================================
+% 4. RELEVANCE TO EMBEDDED AND CYBER-PHYSICAL SYSTEMS
+% ============================================================
+\section{Relevance to Embedded and Cyber-Physical Systems}
+\label{sec:whycps}
 
 The simulator is a faithful model of the constraints that real embedded and CPS
 applications must respect. Although it runs on a general-purpose computer, it
 demonstrates the same fundamental requirements that appear in any real-time,
 resource-constrained, safety-critical system.
 
-\subsubsection{Real-Time and Performance Constraints}
+\subsection{Real-Time and Performance Constraints}
 
 A keystroke is an event that must be processed before the next one arrives or
 before the reconstruction becomes out of order. This is a classic real-time
@@ -385,16 +491,22 @@ growing collection, and no unbounded allocation per key. The measured per-key
 time is in the tens of microseconds, orders of magnitude below the deadline.
 This analysis is expanded with figures in Section~\ref{sec:results}.
 
-\subsubsection{Storage Constraints}
+\subsection{Storage Constraints}
 
 The entire ``knowledge'' of the system is a constant table of 48
 (key, frequency) pairs. This maps to a static lookup table in a real embedded
 system---an extremely compact data structure. The memory footprint is
-independent of the input length, and a lookup is $O(1)$. This demonstrates that
-a resource-constrained device could hold the signature database on-chip with
-minimal storage (e.g., a few hundred bytes of flash/ROM plus the code).
+independent of the input length, and a lookup is $O(1)$.
 
-\subsubsection{Reliability and Safety Constraints}
+Stored as a Python dict, the table occupies on the order of a few kilobytes.
+Projected onto an embedded target, the (key, frequency) pairs fit in a few
+hundred bytes of read-only memory (roughly 200 bytes of flash/ROM plus the
+code), so a resource-constrained device could hold the entire signature
+database on-chip. Runtime memory is proportional only to the length of the
+current input, and every per-key operation uses a fixed, constant amount of
+scratch space.
+
+\subsection{Reliability and Safety Constraints}
 
 Real CPS applications must never exhibit unsafe behaviour. Here the safety
 requirement is that the system must never:
@@ -410,7 +522,7 @@ These are captured as formal invariants and enforced by a dedicated check
 and by the \Key{UNKNOWN} fallback, exactly as a safety monitor would be
 implemented in a real embedded controller.
 
-\subsubsection{Summary of CPS Relevance}
+\subsection{CPS Concepts Mapped to Implementation}
 
 \begin{table}[H]
     \centering
@@ -434,12 +546,17 @@ implemented in a real embedded controller.
     \label{tab:cpsmap}
 \end{table}
 
-\subsection{Implementation of the Project}
+% ============================================================
+% 5. IMPLEMENTATION
+% ============================================================
+\section{Implementation}
+\label{sec:impl}
 
-This subsection describes the physical resources, the overall architecture,
-and the software design of the simulator.
+This section describes the physical resources, the overall architecture, the
+control flow of the core task, the ranking/variant function that guarantees
+termination, and the software design of the simulator.
 
-\subsubsection{System Architecture}
+\subsection{System Architecture}
 
 The system follows a layered architecture: a tkinter GUI front-end delegates
 to a pure core-logic module, which in turn delegates plotting to a separate
@@ -479,7 +596,90 @@ predefined frequency, the frequency is analysed and matched against the
 constant table, and the result is a reconstructed sequence with a per-key
 confidence value.
 
-\subsubsection{Hardware and Platform Details}
+\subsection{Control-Flow Flowchart of the Core Pipeline}
+
+Figure~\ref{fig:flowchart} is the control-flow flowchart of the reconstruction
+task: the outer loop of \texttt{reconstruct\_sequence} driving
+\texttt{identify\_key} for each character. It makes the two decision points
+explicit---whether a character maps to a key at all, and whether the best match
+lies within tolerance---and shows the \Key{UNKNOWN} safety branch.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.9cm,
+        font=\footnotesize,
+        term/.style={rectangle, rounded corners=7pt, draw, fill=codegray,
+                     minimum width=3.6cm, minimum height=0.8cm, align=center},
+        proc/.style={rectangle, draw, minimum width=4.6cm, minimum height=0.8cm,
+                     align=center},
+        dec/.style={diamond, draw, aspect=2.4, inner sep=1pt, align=center},
+        a/.style={-{Stealth[length=2.5mm]}, thick}
+    ]
+        \node[term] (start) {Start: input text};
+        \node[proc, below=of start] (next) {Take next character $c$};
+        \node[dec, below=of next] (map) {$c$ maps to a key?};
+        \node[proc, below=of map] (gen) {$f \gets \texttt{generate\_frequency}(key)$};
+        \node[proc, below=of gen] (scan) {compute $V_i = |f - F_{\text{exp},i}|$ over 48 keys};
+        \node[proc, below=of scan] (best) {$best \gets \arg\min_i V_i$};
+        \node[dec, below=of best] (tol) {$\min_i V_i \le$ TOLERANCE?};
+        \node[proc, below left=1.2cm and -0.3cm of tol] (emit) {emit $best$};
+        \node[proc, below right=1.2cm and -0.3cm of tol] (unk) {emit \texttt{UNKNOWN}};
+        \node[dec, below=3.3cm of tol] (more) {more characters?};
+        \node[term, below=of more] (stop) {Stop: reconstructed sequence};
+
+        \draw[a] (start) -- (next);
+        \draw[a] (next) -- (map);
+        \draw[a] (map) -- node[right]{yes} (gen);
+        \draw[a] (gen) -- (scan);
+        \draw[a] (scan) -- (best);
+        \draw[a] (best) -- (tol);
+        \draw[a] (tol) -| node[near start, above]{yes} (emit);
+        \draw[a] (tol) -| node[near start, above]{no} (unk);
+        \draw[a] (emit) |- (more);
+        \draw[a] (unk) |- (more);
+        \draw[a] (more) -- node[right]{no} (stop);
+        \draw[a] (map.west) -- ++(-3.0,0) node[midway, above]{no (skip)} |- (more.west);
+        \draw[a] (more.east) -- ++(3.0,0) node[midway, above]{yes} |- (next.east);
+    \end{tikzpicture}
+    \caption{Control-flow flowchart of the reconstruction pipeline. Unmapped
+             characters are skipped; the \Key{UNKNOWN} branch is the safety
+             fallback taken when no signature lies within tolerance.}
+    \label{fig:flowchart}
+\end{figure}
+
+\subsection{Ranking / Variant Function and Termination}
+\label{sec:variant}
+
+The reconstruction contains two bounded loops, and each is governed by a
+non-negative \emph{variant} (ranking) function that strictly decreases. This is
+a Lyapunov-style argument for termination: a quantity bounded below by zero that
+decreases on every step must reach its bound in finitely many steps.
+
+\paragraph{Inner loop (\texttt{identify\_key}).}
+The loop iterates over the fixed 48-entry table. Let the variant be the number
+of unexamined keys, $n_{\text{rem}} \in \{48, 47, \ldots, 0\}$. Each iteration
+decrements $n_{\text{rem}}$ by exactly one, and it is bounded below by $0$, so
+the loop terminates after exactly 48 steps. The quantity the loop
+\emph{minimises}, $V = |F_d - F_e|$, is itself non-negative and bounded above by
+the span of the table ($\approx 1410$ Hz), and the running best error
+\texttt{best\_error} is monotonically non-increasing---a second ranking function
+confirming progress toward the nearest signature.
+
+\paragraph{Outer loop (\texttt{reconstruct\_sequence}).}
+For an input of $n$ characters, let the variant be the count of unprocessed
+characters. It starts at $n$, strictly decreases by one on every iteration
+(whether the character is mapped and emitted, or skipped), and is bounded below
+by $0$. Hence any finite input terminates in at most $n$ iterations.
+
+\paragraph{Combined bound.}
+Total work is bounded by $48 \cdot n$ absolute-difference operations, so
+$T_{\text{total}}$ is finite for every finite input and, as
+Section~\ref{sec:analysis} shows, far below the 50 ms deadline. The function
+\texttt{termination\_test()} exercises this directly with a 1000-character
+input.
+
+\subsection{Hardware and Platform Details}
 
 Because this is a software simulation, the hardware requirements are minimal
 and no dedicated controller or sensing hardware is used.
@@ -503,7 +703,7 @@ The absence of a physical keyboard and microphone is intentional and central to
 the project's framing: it is a \emph{simulation} of the side-channel concept
 and its CPS verification, not a functional attack on real hardware.
 
-\subsubsection{Software Design}
+\subsection{Software Design}
 
 The software is organised into two source files.
 
@@ -694,16 +894,7 @@ def termination_test():
     return reconstruct_sequence("A" * 1000).finished
 \end{lstlisting}
 
-\paragraph{Storage footprint.}
-The complete signature database is a 48-entry constant table: stored as a
-Python dict, it consumes on the order of a few kilobytes. Projecting this to an
-embedded target, the (key, frequency) pairs fit in a few hundred bytes of
-read-only memory, demonstrating that the approach is viable even for
-memory-constrained devices. Runtime memory is proportional to the length of the
-current input only, and all per-key processing uses a fixed, constant amount of
-scratch space.
-
-\subsubsection{Design Decisions and Alternatives Considered}
+\subsection{Design Decisions and Alternatives Considered}
 
 A number of design alternatives were considered and rejected during
 development. Documenting these decisions makes the final design's rationale
@@ -750,30 +941,16 @@ These decisions share a common theme: every choice favours \emph{verifiable
 simplicity} (bounded noise, closed-form analysis, deterministic matching) over
 sophistication that would complicate the CPS argument.
 
-\subsubsection{Optimization Flow}
+\subsection{Optimization Flow}
 
-The project applied a deliberate sequence of optimizations. Each step is
-summarised below and later quantified in the results section
-(Figure~\ref{fig:opt}).
+Five optimizations were applied to the simulator: (i) a constant
+key-to-frequency lookup table, (ii) numpy-vectorised signal generation,
+(iii) in-place incremental live plot updaters, (iv) a render cap
+(\texttt{MAX\_PLOT\_KEYS} $= 30$), and (v) robust multi-trial median\,+\,P95
+WCET measurement. Each step and its effect is quantified in
+Section~\ref{sec:optflow} and Figure~\ref{fig:opt}.
 
-\begin{enumerate}
-    \item \textbf{Constant lookup table:} key-to-frequency mapping is a static
-          dict; frequencies are never recomputed, giving $O(1)$ access.
-    \item \textbf{numpy-vectorised signal generation:} sine waves are built
-          with vectorised array operations rather than per-sample Python
-          loops, dramatically reducing plotting time.
-    \item \textbf{Incremental live updaters:} the waveform plots are refreshed
-          in place (\texttt{update\_}\allowbreak\texttt{spectrogram},
-          \texttt{update\_sine\_plot})
-          instead of being redrawn from scratch on every key press.
-    \item \textbf{Plot cap:} \texttt{MAX\_PLOT\_KEYS} $=30$ bounds the number of
-          rendered subplots so a paragraph with hundreds of keys cannot stall
-          the GUI; analysis still covers the full sequence.
-    \item \textbf{Robust WCET:} multi-trial median + P95 gives a trustworthy
-          worst-case figure that is not skewed by a single slow measurement.
-\end{enumerate}
-
-\subsubsection{How to Run the Project}
+\subsection{How to Run the Project}
 
 Running the application, the tests, and the figure generator is
 straightforward and is a deliberate reproducibility feature.
@@ -804,7 +981,7 @@ python3 docs/make_figures.py
 \end{itemize}
 
 % ============================================================
-% 3. TESTING AND RESULTS
+% 6. TESTING AND RESULTS
 % ============================================================
 \section{Testing and Results}
 \label{sec:results}
@@ -867,7 +1044,7 @@ termination are verified programmatically. The suite is deliberately layered:
           accept input and that a finite sequence terminates.
 \end{itemize}
 
-\subsubsection{Languages and tools}
+\subsection{Languages and Tools}
 
 \begin{itemize}
     \item \textbf{Programming language:} Python 3.
@@ -881,7 +1058,7 @@ termination are verified programmatically. The suite is deliberately layered:
           (See the security analysis in Section~\ref{sec:analysis}.)
 \end{itemize}
 
-\subsubsection{Test results}
+\subsection{Results in Tabular Form}
 
 \begin{table}[H]
     \centering
@@ -936,8 +1113,6 @@ argument auditable end to end.
     \caption{Mapping formal requirements to tests.}
     \label{tab:trace}
 \end{table}
-
-\subsubsection{Results in tabular form}
 
 Running the analysis on the sequence \Key{HELLO WORLD} with synthetic noise
 enabled produces representative per-key results (deterministic representative
@@ -1024,7 +1199,7 @@ signals. It is representative of the paragraph workflow that the GUI supports.
         \Key{.} & 1547 & \Key{.} & 2.7 & 0.66 \\
         \bottomrule
     \end{tabular}
-    \caption{Per-key analysis for the pangram (abridged to 35 of 45 keys;
+    \caption{Per-key analysis for the pangram (abridged to 36 of 45 keys;
              representative deterministic values).}
     \label{tab:pangram}
 \end{table}
@@ -1057,8 +1232,7 @@ The global metrics for the same run are summarised below.
     \label{tab:metrics}
 \end{table}
 
-\subsubsection{Example: punctuated paragraph reconstruction}
-
+\paragraph{Example: punctuated paragraph reconstruction.}
 To demonstrate the punctuation support, consider the paragraph
 \emph{``Ready, set, go!''}. The reconstruction pipeline must produce the
 expected key sequence including the comma and exclamation mark.
@@ -1080,8 +1254,7 @@ expected key sequence including the comma and exclamation mark.
     \label{tab:punctuation-example}
 \end{table}
 
-\subsubsection{Example: sample report output}
-
+\paragraph{Example: sample report output.}
 The exported analysis report is produced by \texttt{format\_report()} and
 contains the invariant-check results, the per-key mapping with confidence, the
 reconstructed sequence, and the CPS verification summary. A representative
@@ -1188,14 +1361,15 @@ spectrogram is computed with a sliding Hann-windowed FFT and covers the band
 \end{figure}
 
 % ============================================================
-% 4. ANALYSIS AND EVALUATION
+% 7. ANALYSIS AND EVALUATION
 % ============================================================
 \section{Analysis and Evaluation}
 \label{sec:analysis}
 
 This section interprets the results, analyses the theoretical and statistical
-aspects, discusses the problems faced and bugs fixed, records the limitations,
-and describes the optimization flow in detail.
+aspects, evaluates the project aspect by aspect, discusses the problems faced
+and bugs fixed, describes the optimization flow in detail, and records the
+limitations.
 
 \subsection{How to Read the Results}
 
@@ -1208,7 +1382,7 @@ keystroke. The evidence for each is different:
 
 \begin{itemize}
     \item \textbf{Correctness} is established by the deterministic separation
-          proof (Section~\ref{sec:analysis}) and supported by the per-key
+          proof (Section~\ref{sec:theory}) and supported by the per-key
           tables: every detection stays within the $8$ Hz tolerance, and no
           reconstruction in any table misclassifies a key.
     \item \textbf{Timeliness} is established by the WCET figures: measured
@@ -1225,9 +1399,8 @@ real acoustic system (as in the related literature) would instead report
 empirical accuracy, which is exactly the trade-off this project's clean model
 avoids.
 
-\subsection{Analysis of the Results}
-
-\subsubsection{Theoretical analysis}
+\subsection{Theoretical Analysis}
+\label{sec:theory}
 
 The correctness of the reconstruction rests on the separation argument of
 Section~\ref{sec:principle}. Since the tolerance is $8$ Hz and adjacent keys
@@ -1255,7 +1428,7 @@ so no other key can be closer or within tolerance. This proves that under the
 noise model the reconstruction is always correct. This is a worst-case,
 deterministic guarantee---the strongest form of correctness available.
 
-\subsubsection{Statistical analysis}
+\subsection{Statistical Analysis}
 
 The per-key errors are uniformly distributed in $[-5, +5]$ when noise is
 enabled (because a uniform generator is used). The mean absolute error for
@@ -1292,7 +1465,7 @@ The nearest-rank percentile formula
 reports an exact 95th percentile for any trial count, preventing
 under-reporting when $n$ is not a multiple of 20.
 
-\subsubsection{Complexity analysis}
+\subsection{Complexity Analysis}
 
 The computational complexity of the system is an important performance aspect.
 
@@ -1319,7 +1492,13 @@ real-time deadline is not threatened by longer paragraphs. The only linear
 growth is in the output sequence itself, which is inherent to producing a
 reconstruction of $n$ keys.
 
-\subsection{Performance Analysis}
+\subsection{Aspect-by-Aspect Evaluation}
+
+Section~\ref{sec:understanding} identified five quality aspects for the
+project---design, performance, security, reliability, and scalability. This
+subsection evaluates how well each was met.
+
+\subsubsection{Performance}
 
 The performance requirements are satisfied with a large margin.
 
@@ -1354,8 +1533,135 @@ The visualization path is the only place where execution cost grows with input.
 Rendering a subplot per key is $O(n)$ in axes, which is why the plot cap
 \texttt{MAX\_PLOT\_KEYS} $= 30$ exists. This is a deliberate engineering
 trade-off: full-detail plots for short live sequences, and capped--but fully
-accurate---analysis for long paragraphs. Section~\ref{sec:analysis} revisits
+accurate---analysis for long paragraphs. Section~\ref{sec:optflow} revisits
 this under the optimization flow.
+
+\subsubsection{Security}
+
+\paragraph{Threat model.}
+The project models an adversary who can observe the frequency signature of
+each keystroke---for example, an attacker with a nearby microphone recording
+the keyboard. If key-specific frequencies can be separated, the attacker can
+reconstruct the typed text, including potentially confidential passwords or
+messages. In the real literature, such attacks reach $95\%$ accuracy with a
+deep-learning classifier and $93\%$ over Zoom (Harrison et al., 2023).
+
+The threat model can be stated precisely. The attacker's goal is to recover a
+sequence of keys $K_1, K_2, \ldots, K_n$ typed by a victim. The attacker
+observes a signal that is separated per key into an observed frequency $F_i$
+with additive noise $\delta_i$:
+
+\[
+F_i = F_{K_i} + \delta_i, \qquad |\delta_i| \le 5\ \text{Hz}.
+\]
+
+Under this model the attacker (respectively, this simulator) can recover every
+key with certainty because the noise bound is smaller than the tolerance and
+smaller than half the spacing---the deterministic separation proof of
+Section~\ref{sec:theory}. The severity of the attack lies in this
+\emph{full-recovery} property: nothing is lost to ambiguity, so even a single
+keystroke (e.g., a password character) is exposed.
+
+\paragraph{How the simulator relates to security.}
+The simulator \emph{demonstrates} the feasibility of the attack: it shows that,
+given distinguishable per-key signatures, full text recovery is possible in
+software. At the same time, the system is built with defensive engineering
+principles:
+
+\begin{itemize}
+    \item \textbf{Safety by construction:} the \Key{UNKNOWN} state ensures the
+          system never fabricates a key when no signal matches. This prevents
+          false positives that would corrupt the reconstructed output.
+    \item \textbf{Determinism:} the constant table and matching rule are
+          deterministic, so behaviour is reproducible and auditable.
+    \item \textbf{Confidence scoring:} every key carries a confidence, so a
+          downstream consumer can reject low-confidence reconstructions.
+\end{itemize}
+
+\paragraph{Attack surface and confidentiality.}
+The \emph{confidentiality} property that this attack violates is the secrecy of
+the typed text. In a physical deployment, the victim's keyboard is the asset;
+the acoustic emanation is the accidental channel; the attacker's microphone is
+the sensing element. The security posture depends on the attacker's ability to
+(1) collect clean per-key signals and (2) separate keys. This project abstracts
+both steps to their essence by supplying clean signatures. The implication for
+security engineering is direct: any real system that must protect typed input
+against nearby audio capture cannot rely on the keyboard itself to be silent,
+and defensive measures must be applied at the environment or input level.
+
+\paragraph{Mitigation options (external to this simulation).}
+The literature documents several defences, all of which are conceptually
+relevant even though they are not implemented here:
+
+\begin{itemize}
+    \item \textbf{Random noise masking:} play random audio (white noise or
+          ``fake keystroke'' sounds) to obscure genuine keystroke signals.
+    \item \textbf{Vocabulary-based authentication:} use random passwords (low
+          language predictability) or one-time inputs to reduce what can be
+          inferred.
+    \item \textbf{Keyboard dampening:} quieter switches and chassis damping
+          reduce the emanation's signal-to-noise ratio.
+    \item \textbf{Audio compression degradation:} VoIP compression (as in
+          Zoom) can degrade the signal, though the literature shows it remains
+          exploitable.
+\end{itemize}
+
+\paragraph{Security of the simulation itself.}
+The simulator performs no encryption and stores no secrets in a protected form.
+This is appropriate because the project models the \emph{attacker's}
+perspective. The confidentiality concern being demonstrated (keystroke leakage)
+is the threat; protecting against it would be the \emph{victim's} task and is
+out of scope. Any real deployment would require countermeasures such as random
+noise masking, keyboard sound dampening, or input obfuscation---all documented
+external mitigations. The absence of cryptography is therefore a deliberate and
+honest modelling choice, not an omission: the project demonstrates an attack,
+and the attack surface it exposes is exhaustive (every keystroke recoverable),
+which underscores the seriousness of the underlying threat.
+
+\subsubsection{Reliability}
+
+Reliability is demonstrated through the invariant guarantees and the test
+suite. All 62 tests pass, including:
+
+\begin{itemize}
+    \item invariant checks (positive, unique, valid frequencies),
+    \item tolerance-boundary classification,
+    \item noise robustness across many trials,
+    \item sequence and paragraph reconstruction,
+    \item punctuation handling,
+    \item liveness and termination.
+\end{itemize}
+
+The deterministic worst-case separation proof of Section~\ref{sec:theory}
+extends beyond the tests: it is a mathematical guarantee that, under the noise
+model, reconstruction is always correct. This is stronger than test-based
+evidence alone.
+
+\paragraph{Invariant-by-invariant assessment.}
+\begin{itemize}
+    \item \emph{Positive frequencies.} Every entry in the constant table is
+          greater than zero; the smallest is 440 Hz. No generated frequency can
+          be negative because noise is added after the positive base value.
+    \item \emph{Unique frequencies.} The 30 Hz grid guarantees distinct values;
+          the test asserts $|\{f_i\}| = 48$.
+    \item \emph{Database valid (non-empty).} The table is a static dictionary
+          with 48 entries verified by \texttt{check\_invariants()}.
+\end{itemize}
+
+Each invariant is machine-checked both as a standalone test and inside
+\texttt{check\_invariants()}, so the reliability claim is auditable.
+
+\subsubsection{Design and Scalability}
+
+\emph{Design} was addressed through the layered architecture
+(Figure~\ref{fig:arch}) and the single-source \texttt{format\_report()}, which
+keeps the on-screen output and the exported report identical, and through the
+GUI-independent core that makes headless testing possible. \emph{Scalability}
+was deliberately constrained: the 48-key table gives $O(1)$ lookup and
+\texttt{MAX\_PLOT\_KEYS} bounds rendering, but the design does not target
+large-key-set growth---a larger keyboard would need a wider frequency band and
+possibly a higher sample rate, as noted in the limitations
+(Section~\ref{sec:limitations}).
 
 \subsection{Problems Faced}
 
@@ -1407,7 +1713,35 @@ Several bugs were identified and corrected during the project:
           widened to 1900 Hz.
 \end{enumerate}
 
+\subsection{Optimization Flow in Detail}
+\label{sec:optflow}
+
+This subsection expands on the optimization steps and why each was necessary,
+with reference to the figures.
+
+\begin{enumerate}
+    \item \textbf{Constant table over computation.} The 48-key table makes
+          frequency lookup $O(1)$ and removes recomputation cost.
+    \item \textbf{numpy vectorisation.} Signal generation and the sliding FFT
+          are vectorised, converting per-sample Python loops into fast array
+          operations (Figure~\ref{fig:opt}, steps 1--2).
+    \item \textbf{Incremental updates.} Plotting a growing sequence is
+          incremental rather than a full redraw, keeping the GUI responsive
+          (Figure~\ref{fig:opt}, step 3).
+    \item \textbf{\texttt{MAX\_PLOT\_KEYS} cap.} Rendering is bounded to 30
+          keys, so interaction latency stays low even for long paragraphs
+          (Figure~\ref{fig:opt}, step 4).
+    \item \textbf{Robust WCET.} Reporting median and P95 over 20 trials yields a
+          trustworthy worst-case figure that satisfies the 50 ms deadline
+          comfortably (Figure~\ref{fig:timing}).
+\end{enumerate}
+
+The cumulative effect is a system that is simultaneously fast (WCET order of
+microseconds, far under the 50 ms deadline), correct (proved within the noise
+model), and usable (responsive GUI even for paragraph input).
+
 \subsection{Limitations and Threats to Validity}
+\label{sec:limitations}
 
 The project has several deliberate limitations.
 
@@ -1436,155 +1770,11 @@ The project has several deliberate limitations.
 These limitations mean the project should be read as a \emph{demonstration of a
 concept and its CPS verification}, not as a deployable acoustic attack.
 
-\subsection{Security Analysis}
-
-\subsubsection{Threat model}
-
-The project models an adversary who can observe the frequency signature of
-each keystroke---for example, an attacker with a nearby microphone recording
-the keyboard. If key-specific frequencies can be separated, the attacker can
-reconstruct the typed text, including potentially confidential passwords or
-messages. In the real literature, such attacks reach $95\%$ accuracy with a
-deep-learning classifier and $93\%$ over Zoom (Harrison et al., 2023).
-
-The threat model can be stated precisely. The attacker's goal is to recover a
-sequence of keys $K_1, K_2, \ldots, K_n$ typed by a victim. The attacker
-observes a signal that is separated per key into an observed frequency $F_i$
-with additive noise $\delta_i$:
-
-\[
-F_i = F_{K_i} + \delta_i, \qquad |\delta_i| \le 5\ \text{Hz}.
-\]
-
-Under this model the attacker (respectively, this simulator) can recover every
-key with certainty because the noise bound is smaller than the tolerance and
-smaller than half the spacing---the deterministic separation proof of
-Section~\ref{sec:analysis}. The severity of the attack lies in this
-\emph{full-recovery} property: nothing is lost to ambiguity, so even a single
-keystroke (e.g., a password character) is exposed.
-
-\subsubsection{How the simulator relates to security}
-
-The simulator \emph{demonstrates} the feasibility of the attack: it shows that,
-given distinguishable per-key signatures, full text recovery is possible in
-software. At the same time, the system is built with defensive engineering
-principles:
-
-\begin{itemize}
-    \item \textbf{Safety by construction:} the \Key{UNKNOWN} state ensures the
-          system never fabricates a key when no signal matches. This prevents
-          false positives that would corrupt the reconstructed output.
-    \item \textbf{Determinism:} the constant table and matching rule are
-          deterministic, so behaviour is reproducible and auditable.
-    \item \textbf{Confidence scoring:} every key carries a confidence, so a
-          downstream consumer can reject low-confidence reconstructions.
-\end{itemize}
-
-\subsubsection{Attack surface and confidentiality}
-
-The \emph{confidentiality} property that this attack violates is the secrecy of
-the typed text. In a physical deployment, the victim's keyboard is the asset;
-the acoustic emanation is the accidental channel; the attacker's microphone is
-the sensing element. The security posture depends on the attacker's ability to
-(1) collect clean per-key signals and (2) separate keys. This project abstracts
-both steps to their essence by supplying clean signatures. The implication for
-security engineering is direct: any real system that must protect typed input
-against nearby audio capture cannot rely on the keyboard itself to be silent,
-and defensive measures must be applied at the environment or input level.
-
-\paragraph{Mitigation options (external to this simulation).}
-The literature documents several defences, all of which are conceptually
-relevant even though they are not implemented here:
-
-\begin{itemize}
-    \item \textbf{Random noise masking:} play random audio (white noise or
-          ``fake keystroke'' sounds) to obscure genuine keystroke signals.
-    \item \textbf{Vocabulary-based authentication:} use random passwords (low
-          language predictability) or one-time inputs to reduce what can be
-          inferred.
-    \item \textbf{Keyboard dampening:} quieter switches and chassis damping
-          reduce the emanation's signal-to-noise ratio.
-    \item \textbf{Audio compression degradation:} VoIP compression (as in
-          Zoom) can degrade the signal, though the literature shows it remains
-          exploitable.
-\end{itemize}
-
-\subsubsection{Security of the simulation itself}
-
-The simulator performs no encryption and stores no secrets in a protected form.
-This is appropriate because the project models the \emph{attacker's}
-perspective. The confidentiality concern being demonstrated (keystroke leakage)
-is the threat; protecting against it would be the \emph{victim's} task and is
-out of scope. Any real deployment would require countermeasures such as random
-noise masking, keyboard sound dampening, or input obfuscation---all documented
-external mitigations. The absence of cryptography is therefore a deliberate and
-honest modelling choice, not an omission: the project demonstrates an attack,
-and the attack surface it exposes is exhaustive (every keystroke recoverable),
-which underscores the seriousness of the underlying threat.
-
-\subsection{Reliability Analysis}
-
-Reliability is demonstrated through the invariant guarantees and the test
-suite. All 62 tests pass, including:
-
-\begin{itemize}
-    \item invariant checks (positive, unique, valid frequencies),
-    \item tolerance-boundary classification,
-    \item noise robustness across many trials,
-    \item sequence and paragraph reconstruction,
-    \item punctuation handling,
-    \item liveness and termination.
-\end{itemize}
-
-The deterministic worst-case separation proof of Section~\ref{sec:analysis}
-extends beyond the tests: it is a mathematical guarantee that, under the noise
-model, reconstruction is always correct. This is stronger than test-based
-evidence alone.
-
-\paragraph{Invariant-by-invariant assessment.}
-\begin{itemize}
-    \item \emph{Positive frequencies.} Every entry in the constant table is
-          greater than zero; the smallest is 440 Hz. No generated frequency can
-          be negative because noise is added after the positive base value.
-    \item \emph{Unique frequencies.} The 30 Hz grid guarantees distinct values;
-          the test asserts $|\{f_i\}| = 48$.
-    \item \emph{Database valid (non-empty).} The table is a static dictionary
-          with 48 entries verified by \texttt{check\_invariants()}.
-\end{itemize}
-
-Each invariant is machine-checked both as a standalone test and inside
-\texttt{check\_invariants()}, so the reliability claim is auditable.
-
-\subsection{Optimization Flow in Detail}
-
-This subsection expands on the optimization steps and why each was necessary,
-with reference to the figures.
-
-\begin{enumerate}
-    \item \textbf{Constant table over computation.} The 48-key table makes
-          frequency lookup $O(1)$ and removes recomputation cost.
-    \item \textbf{numpy vectorisation.} Signal generation and the sliding FFT
-          are vectorised, converting per-sample Python loops into fast array
-          operations (Figure~\ref{fig:opt}, steps 1--2).
-    \item \textbf{Incremental updates.} Plotting a growing sequence is
-          incremental rather than a full redraw, keeping the GUI responsive
-          (Figure~\ref{fig:opt}, step 3).
-    \item \textbf{\texttt{MAX\_PLOT\_KEYS} cap.} Rendering is bounded to 30
-          keys, so interaction latency stays low even for long paragraphs
-          (Figure~\ref{fig:opt}, step 4).
-    \item \textbf{Robust WCET.} Reporting median and P95 over 20 trials yields a
-          trustworthy worst-case figure that satisfies the 50 ms deadline
-          comfortably (Figure~\ref{fig:timing}).
-\end{enumerate}
-
-The cumulative effect is a system that is simultaneously fast (WCET order of
-microseconds, far under the 50 ms deadline), correct (proved within the noise
-model), and usable (responsive GUI even for paragraph input).
-
 % ============================================================
-% 5. CONCLUSION AND DISCUSSION
+% 8. CONCLUSION AND DISCUSSION
 % ============================================================
 \section{Conclusion and Discussion}
+\label{sec:conclusion}
 
 \subsection{Direct Answer}
 
@@ -1619,8 +1809,9 @@ key.
 The formal CPS requirements were then layered on top. A deadline of 50 ms bounds
 the per-key task; WCET is measured robustly across 20 trials as median and P95.
 Invariants (positive, unique, valid frequencies) are defined and checked.
-Liveness and termination are verified programmatically. The ranking function $V$
-double as the correctness metric, and confidence $C$ translates error into an
+Liveness and termination are verified programmatically, the latter backed by the
+variant-function argument of Section~\ref{sec:variant}. The ranking function $V$
+doubles as the correctness metric, and confidence $C$ translates error into an
 interpretable quality score.
 
 Visualization was added to make the concept tangible: sine waveforms and a
@@ -1651,6 +1842,7 @@ punctuation) is reconstructed through the frequency pipeline within the
 deadline, or watch the keypad grow the waveforms live.
 
 \subsection{Comparison with Related Work}
+\label{sec:related}
 
 \begin{table}[H]
     \centering
@@ -1705,7 +1897,7 @@ invariant, liveness, termination, and WCET machinery, so their formal
 verification would not start from scratch.
 
 % ============================================================
-% 6. BIBLIOGRAPHY
+% 9. BIBLIOGRAPHY
 % ============================================================
 \begin{thebibliography}{99}
 
