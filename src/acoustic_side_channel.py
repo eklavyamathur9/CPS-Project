@@ -441,7 +441,12 @@ def format_report(text, add_noise=False, trials=WCET_TRIALS):
     lines.append("ACOUSTIC SIDE-CHANNEL SIMULATOR - ANALYSIS REPORT")
     lines.append("=" * 60)
 
-    lines.append(f"\nInput sequence     : {text}")
+    # Echo the paragraph flattened to one line so the report's blank-line
+    # record structure cannot be broken by multi-line input. Reconstruction
+    # (below) still runs on the raw text.
+    lines.append(
+        f"\nInput sequence     : {text.replace(chr(10), ' ')}"
+    )
     lines.append(f"Synthetic noise    : {'ON' if add_noise else 'OFF'}")
     lines.append(f"Generated at       : {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -1067,8 +1072,12 @@ class AcousticSideChannelApp:
     def _current_input(self):
         """
         Return the current input text (multi-line safe).
+
+        Uses "end-1c" to drop only the implicit trailing newline that
+        tk.Text always appends, preserving any leading/trailing spaces
+        the user actually typed.
         """
-        return self.input_entry.get("1.0", tk.END).strip()
+        return self.input_entry.get("1.0", "end-1c")
 
     # --------------------------------------------------------
     # ANALYSIS FUNCTION

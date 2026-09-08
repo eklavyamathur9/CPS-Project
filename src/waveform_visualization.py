@@ -22,6 +22,11 @@ from acoustic_side_channel import KEY_FREQUENCIES
 SAMPLE_RATE = 44100  # Hz (simulated acoustic sampling rate)
 DURATION = 0.05      # seconds per key (50 ms)
 
+# Maximum number of keys rendered in a single plot/update. Paragraph input
+# can inject hundreds of keys; rendering all of them builds thousands of
+# subplots and stalls the GUI. Analysis/reports still use the full sequence.
+MAX_PLOT_KEYS = 30
+
 
 def generate_sine(key, duration=DURATION, sample_rate=SAMPLE_RATE, noise=False):
     """
@@ -51,8 +56,13 @@ def plot_sine_waves(keys, title="Key Frequency Waveforms", noise=False):
     """
     Plot stacked sine waves for a sequence of keys.
 
+    Only the first MAX_PLOT_KEYS keys are rendered so long paragraph
+    inputs do not stall the GUI.
+
     Returns a matplotlib Figure.
     """
+    keys = keys[:MAX_PLOT_KEYS] if len(keys) > MAX_PLOT_KEYS else keys
+
     fig, axes = plt.subplots(
         len(keys), 1,
         figsize=(9, 1.4 * max(len(keys), 1)),
@@ -144,10 +154,15 @@ def plot_spectrogram(keys, title="Frequency Spectrogram", noise=False):
     Plot a simulated spectrogram: frequency (Hz) on the y-axis, time on the
     x-axis, with each key shown as a horizontal band at its assigned frequency.
 
+    Only the first MAX_PLOT_KEYS keys are rendered so long paragraph
+    inputs do not stall the GUI.
+
     Returns a matplotlib Figure.
     """
     if not keys:
         keys = ["A"]
+
+    keys = keys[:MAX_PLOT_KEYS] if len(keys) > MAX_PLOT_KEYS else keys
 
     time_ms, freq_grid, mag_display = compute_spectrogram(keys, noise=noise)
 
@@ -219,6 +234,8 @@ def update_spectrogram(fig, ax, keys, noise=False):
     Returns True on success. The caller is responsible for redrawing the
     canvas via FigureCanvasTkAgg.draw().
     """
+    keys = keys[:MAX_PLOT_KEYS] if len(keys) > MAX_PLOT_KEYS else keys
+
     time_ms, freq_grid, mag_display = compute_spectrogram(keys, noise=noise)
 
     _update_spectrogram_artists(ax, time_ms, freq_grid, mag_display)
@@ -258,6 +275,8 @@ def update_sine_plot(fig, axes, keys, noise=False):
     """
     if not keys:
         keys = ["A"]
+
+    keys = keys[:MAX_PLOT_KEYS] if len(keys) > MAX_PLOT_KEYS else keys
 
     # Clear each existing axes and redraw one sine per key.
     for axis in axes:
