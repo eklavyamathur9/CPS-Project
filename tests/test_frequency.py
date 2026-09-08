@@ -183,6 +183,58 @@ def test_keys_from_text_handles_spaces():
 
 
 # ----------------------------------------------------------
+# MULTILINE / PARAGRAPH INPUT
+# ----------------------------------------------------------
+
+def test_keys_from_text_multiline():
+    """Newlines are skipped; valid keys from a multi-line paragraph."""
+    paragraph = "HELLO\nWORLD"
+    assert keys_from_text(paragraph) == [
+        "H", "E", "L", "L", "O", "W", "O", "R", "L", "D"
+    ]
+
+
+def test_paragraph_reconstruction_matches_flattened():
+    """A multi-line paragraph reconstructs as if the newlines were removed."""
+    paragraph = "CPS PROJECT\nIS LIVE"
+    multiline, _, _, _ = reconstruct_sequence(paragraph, add_noise=False)
+    flat, _, _, _ = reconstruct_sequence(
+        paragraph.replace("\n", ""), add_noise=False
+    )
+    assert multiline == flat
+
+
+def test_sequence_reconstruction_multiline_preserves_only_valid_keys():
+    """Newlines and punctuation are skipped; only valid keys remain."""
+    paragraph = "The quick brown fox\njumps over 123!"
+    reconstructed, _, _, _ = reconstruct_sequence(paragraph, add_noise=False)
+    expected = ["T", "H", "E", "SPACE", "Q", "U", "I", "C", "K", "SPACE",
+                "B", "R", "O", "W", "N", "SPACE", "F", "O", "X",
+                "J", "U", "M", "P", "S", "SPACE", "O", "V", "E", "R",
+                "SPACE", "1", "2", "3"]
+    assert reconstructed == expected
+
+
+def test_format_report_paragraph():
+    """format_report builds a full report for a multi-line paragraph."""
+    paragraph = "CPS\n2026"
+    report = format_report(paragraph, add_noise=False, trials=5)
+    assert "INVARIANT CHECK" in report
+    assert "END OF REPORT" in report
+    assert "C P S 2 0 2 6" in report
+
+
+def test_analyze_paragraph_produces_report_content():
+    """GUI analyze() handles multi-line input via the Text widget."""
+    app = _make_stub_app("HELLO\nWORLD")
+    AcousticSideChannelApp.analyze(app)
+    content = app.output.get("1.0", tk.END)
+    assert "INVARIANT CHECK" in content
+    assert "END OF REPORT" in content
+    assert "H E L L O W O R L D" in content
+
+
+# ----------------------------------------------------------
 # WCET / REAL-TIME
 # ----------------------------------------------------------
 
@@ -509,9 +561,11 @@ def _make_stub_app(text, plot_var=False):
     app.export_plots_var = type("Var", (), {"get": lambda self: plot_var})()
     app.input_entry = type(
         "Entry", (),
-        {"get": lambda self: text, "delete": lambda *a: None,
-         "insert": lambda *a: None},
+        {"get": lambda self, *a, **k: text,
+         "delete": lambda *a, **k: None,
+         "insert": lambda *a, **k: None},
     )()
+    app._current_input = (lambda: text)
     return app
 
 
