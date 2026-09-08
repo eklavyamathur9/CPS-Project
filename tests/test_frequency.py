@@ -194,6 +194,14 @@ def test_keys_from_text_multiline():
     ]
 
 
+def test_keys_from_text_crlf_survives_trailing_newline():
+    """Windows \\r\\n and trailing newlines yield the same keys."""
+    assert keys_from_text("HELLO\r\nWORLD\n") == [
+        "H", "E", "L", "L", "O", "W", "O", "R", "L", "D"
+    ]
+    assert keys_from_text("AB\rCD") == ["A", "B", "C", "D"]
+
+
 def test_paragraph_reconstruction_matches_flattened():
     """A multi-line paragraph reconstructs as if the newlines were removed."""
     paragraph = "CPS PROJECT\nIS LIVE"
@@ -222,6 +230,8 @@ def test_format_report_paragraph():
     assert "INVARIANT CHECK" in report
     assert "END OF REPORT" in report
     assert "C P S 2 0 2 6" in report
+    assert "Input sequence     : CPS 2026" in report
+    assert "Input sequence     : CPS\n2026" not in report
 
 
 def test_analyze_paragraph_produces_report_content():
@@ -232,6 +242,34 @@ def test_analyze_paragraph_produces_report_content():
     assert "INVARIANT CHECK" in content
     assert "END OF REPORT" in content
     assert "H E L L O W O R L D" in content
+
+
+def test_on_key_pressed_appends_at_end():
+    """Keypad presses append to the Text end, not rebuild from index 0."""
+    app = _make_stub_app("")
+    app._build_live_canvas = lambda noise: None
+    AcousticSideChannelApp.on_key_pressed(app, "A")
+    AcousticSideChannelApp.on_key_pressed(app, "SPACE")
+    assert app.pressed_keys == ["A", "SPACE"]
+    assert ("insert", tk.END, "A") in app.input_entry.calls
+    assert ("insert", tk.END, " ") in app.input_entry.calls
+
+
+def test_clear_live_clears_text_and_state():
+    """clear_live() empties the Text via Text indexes and resets state."""
+    app = _make_stub_app("HELLO")
+    app.pressed_keys = ["H", "E"]
+    AcousticSideChannelApp.clear_live(app)
+    assert ("delete", "1.0", tk.END) in app.input_entry.calls
+    assert app.pressed_keys == []
+    assert app.live_spec_fig is None
+    assert app.live_sine_fig is None
+
+
+def test_current_input_drops_only_trailing_newline():
+    """_current_input() removes the widget newline, keeps real spaces."""
+    app = _make_stub_app(" HELLO WORLD ")
+    assert app._current_input() == " HELLO WORLD "
 
 
 # ----------------------------------------------------------
@@ -553,19 +591,29 @@ class _StubRoot:
 
 def _make_stub_app(text, plot_var=False):
     """Build an object exposing the attributes the GUI methods use."""
-    app = type("StubApp", (), {})()
+    app = AcousticSideChannelApp.__new__(AcousticSideChannelApp)
     app.output = _StubText()
     app.root = _StubRoot()
     app.status_var = type("Var", (), {"set": lambda self, v: None})()
     app.noise_var = type("Var", (), {"get": lambda self: False})()
     app.export_plots_var = type("Var", (), {"get": lambda self: plot_var})()
-    app.input_entry = type(
-        "Entry", (),
-        {"get": lambda self, *a, **k: text,
-         "delete": lambda *a, **k: None,
-         "insert": lambda *a, **k: None},
+    app.live_spec_fig = None
+    app.live_spec_ax = None
+    app.live_sine_fig = None
+    app.live_sine_axes = None
+    app.pressed_keys = []
+    app.waveform_canvas_frame = type(
+        "Frame", (), {"winfo_children": lambda self: []}
     )()
-    app._current_input = (lambda: text)
+
+    calls = []
+    entry = type("Text", (), {})()
+    entry.calls = calls
+    entry.get = lambda start="1.0", end=tk.END: (text + "\n")[
+        :-1] if end == "end-1c" else text + "\n"
+    entry.insert = lambda index, string: calls.append(("insert", index, string))
+    entry.delete = lambda start, end: calls.append(("delete", start, end))
+    app.input_entry = entry
     return app
 
 
