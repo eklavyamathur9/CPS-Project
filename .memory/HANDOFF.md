@@ -9,17 +9,18 @@ The project is fully scaffolded and verified:
 
 - **Application** — `src/acoustic_side_channel.py` with core logic + tkinter GUI
   (Analysis + Waveform tabs) and an on-screen keypad.
-- **Paragraph input** — multi-line `tk.Text` input box; newlines/unsupported
-  characters skipped, leading/trailing spaces preserved (`_current_input()` uses
-  `get("1.0", "end-1c")`).
+- **Paragraph input** — multi-line `tk.Text` input box; supported keys include
+  punctuation `. , ! ? ; : ' " ( ) -` (frequencies 1550–1850 Hz);
+  newlines/unmapped characters skipped, leading/trailing spaces preserved
+  (`_current_input()` uses `get("1.0", "end-1c")`).
 - **Live updates** — clicking keypad buttons (A–Z + 0–9 + SPACE + Clear) appends a key
   and incrementally updates the sine + spectrogram plots on each press, via
   `on_key_pressed` → `update_sine_plot` / `update_spectrogram`.
 - **Visualization** — `src/waveform_visualization.py` (sine waves + spectrogram,
   plus incremental updaters and a shared `compute_spectrogram` helper). Plot
   rendering is capped at `MAX_PLOT_KEYS = 30` so long paragraphs stay responsive.
-- **Tests** — `tests/test_frequency.py`, 56 tests, all passing.
-- **Report** — `docs/report.tex` compiled to `docs/report.pdf` (11 pages).
+- **Tests** — `tests/test_frequency.py`, 62 tests, all passing.
+- **Report** — `docs/report.tex` compiled to `docs/report.pdf`.
 - **Docs** — `README.md`, `CLAUDE.md`, and the full docs/ set.
 - **Memory** — `.memory/CURRENT_SESSION.md`, `PROJECT_CONTEXT.md`, `HANDOFF.md`.
 

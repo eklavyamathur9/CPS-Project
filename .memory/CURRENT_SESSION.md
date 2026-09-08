@@ -36,6 +36,8 @@ Scaffold a complete, well-documented project for the CPS assignment:
 | Added export report/copy, digit keys 0--9, per-key confidence, multi-trial WCET (median + P95) | DONE |
 | Added multi-line paragraph input (tk.Text) + tests | DONE |
 | Ran tests — 56 pass | DONE |
+| Added punctuation keys (11 marks, 1550–1850 Hz) + widened spectrogram band to 1900 Hz | DONE |
+| Ran tests — 62 pass | DONE |
 
 ## Commands Used
 
@@ -47,7 +49,7 @@ cd docs && pdflatex report.tex                # build report
 
 ## Verification Notes
 
-- 56/56 unit tests pass.
+- 62/62 unit tests pass.
 - PDF compiles cleanly with no errors.
 - Modules import and core functions (invariants, liveness, termination) verified
   manually via the Python REPL.
@@ -55,6 +57,8 @@ cd docs && pdflatex report.tex                # build report
   update_sine_plot run without error).
 - Paragraph validation: MAX_PLOT_KEYS caps plots (300 keys → 30 axes);
   CRLF/trailing-newline input verified; leading/trailing spaces preserved.
+- Punctuation validation: `. , ! ? ; : ' " ( ) -` map to keys 1550–1850 Hz;
+  unmapped symbols (`@`, `#`, `/`) still skipped.
 
 ## Open Items
 

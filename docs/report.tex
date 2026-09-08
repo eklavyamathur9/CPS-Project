@@ -401,7 +401,8 @@ sine waves for the sequence \Key{HELLO WORLD}.
 The spectrogram visualization (Figure~\ref{fig:spec}) shows the frequency (Hz)
 on the vertical axis and time on the horizontal axis. Each key appears as a
 horizontal band at its assigned frequency. The displayed frequency range spans
-$350$--$1600$ Hz, which covers all 37 key signatures plus the digit keys.
+$350$--$1900$ Hz, which covers all 48 key signatures, including the digits and
+punctuation marks.
 
 \begin{figure}[H]
     \centering
@@ -534,8 +535,9 @@ The final software demonstrates:
 \section{Frequency Database}
 
 Each key is assigned a unique frequency signature. The table below lists the
-assigned frequencies for all 37 keys: the 26 letters (A--Z), the 10 digits
-(0--9), and the space bar.
+assigned frequencies for all 48 keys: the 26 letters (A--Z), the 10 digits
+(0--9), the space bar, and 11 punctuation marks continued on the same 30~Hz
+grid.
 
 \begin{table}[H]
     \centering
@@ -567,11 +569,21 @@ assigned frequencies for all 37 keys: the 26 letters (A--Z), the 10 digits
         \Key{2} & 1310 & \Key{7} & 1460 \\
         \Key{3} & 1340 & \Key{8} & 1490 \\
         \Key{4} & 1370 & \Key{9} & 1520 \\
+        \midrule
+        \textbf{Key} & \textbf{Frequency (Hz)} &
+        \textbf{Key} & \textbf{Frequency (Hz)} \\
+        \midrule
+        \Key{.} & 1550 & \Key{,} & 1580 \\
+        \Key{!} & 1610 & \Key{?} & 1640 \\
+        \Key{;} & 1670 & \Key{:} & 1700 \\
+        \Key{'} & 1730 & \Key{"} & 1760 \\
+        \Key{(} & 1790 & \Key{)} & 1820 \\
+        \Key{-} & 1850 & \\
         \bottomrule
     \end{tabular}
-    \caption{Predefined frequency signatures for all 37 keys (26 letters, 10
-             digits, and SPACE). The digits are spaced 30 Hz apart above the
-             SPACE frequency.}
+    \caption{Predefined frequency signatures for all 48 keys (26 letters, 10
+             digits, SPACE, and 11 punctuation marks). The signatures continue
+             the 30~Hz grid above the digit keys.}
     \label{tab:frequencies}
 \end{table}
 
@@ -645,7 +657,7 @@ The implementation satisfies all the CPS verification requirements:
     \item \textbf{WCET} is measured across multiple trials and its median and
           P95 are shown to satisfy the real-time deadline.
     \item \textbf{Invariants} (positive, unique, and valid frequencies;
-          sequence preservation) are defined and verified for all 37 keys.
+          sequence preservation) are defined and verified for all 48 keys.
     \item \textbf{Liveness} and \textbf{termination} are demonstrated
           programmatically.
     \item A \textbf{ranking function} $V = |F_{\text{detected}} - F_{\text{expected}}|$
@@ -658,10 +670,33 @@ The implementation satisfies all the CPS verification requirements:
 The project provides a complete, verifiable CPS model and a graphical
 interface suitable for demonstration in a project presentation. The multi-line
 input box accepts a full paragraph and reconstructs every valid keystroke,
-while the on-screen keypad (A--Z + 0--9 + SPACE) lets a presenter type a
-sequence live and watch the sine and spectrogram plots grow with each key
-press, and the status bar reports the per-key frequency, error, and execution
-time in real time. The full analysis can be exported as a text report
-(optionally with the waveform plots) or copied to the clipboard for sharing.
+including punctuation, while the on-screen keypad (A--Z + 0--9 + SPACE) lets a
+presenter type a sequence live and watch the sine and spectrogram plots grow
+with each key press, and the status bar reports the per-key frequency, error,
+and execution time in real time. The full analysis can be exported as a text
+report (optionally with the waveform plots) or copied to the clipboard for
+sharing.
+
+% ============================================================
+% 14. RELATED WORK
+% ============================================================
+\section{Related Work}
+
+Real-world acoustic side-channel attacks operate on the broadband, transient
+sound of a keypress rather than a single pure tone. Harrison, Toreini, and
+Mehrnezhad classify laptop keystrokes with a deep-learning model (CoAtNet) on
+mel-spectrograms, reaching $95\%$ accuracy for smartphone recordings and $93\%$
+over Zoom, and publicly release the recording corpus used
+(\texttt{JBFH-Dev/Keystroke-Datasets}); the dataset covers letters and digits
+only and provides raw audio, not per-key frequency constants. The \texttt{kbd-audio}
+toolkit by Gerganov (``KeyTap'') reconstructs keystrokes by building per-key
+acoustic fingerprints from a known transcript recorded on the target keyboard;
+it likewise requires live audio capture and offers no reusable frequency table.
+
+These works motivate two design choices in this simulation: (a) every key is
+given a clearly separated, unique predefined signature (30~Hz spacing, 8~Hz
+tolerance) so the software-only model is unambiguous, and (b) punctuation keys
+are included so paragraph text reconstructs completely, even though no public
+acoustic dataset provides such mappings.
 
 \end{document}

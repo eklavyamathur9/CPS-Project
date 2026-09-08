@@ -19,6 +19,7 @@ session.
 | GUI (tabs: Analysis + Waveform, noise toggle, analyze + visualize buttons) | `src/acoustic_side_channel.py` | DONE |
 | Multi-line paragraph input (tk.Text + scrollbar; newlines skipped) | `src/acoustic_side_channel.py` | DONE |
 | On-screen keypad with live incremental waveform updates | `src/acoustic_side_channel.py` | DONE |
+| Punctuation keys (11 marks, 1550–1850 Hz, spectrogram band to 1900 Hz) | `src/acoustic_side_channel.py`, `src/waveform_visualization.py` | DONE |
 | Waveform visualization (sine + spectrogram) with MAX_PLOT_KEYS cap | `src/waveform_visualization.py` | DONE |
 | Incremental updaters (update_sine_plot, update_spectrogram) | `src/waveform_visualization.py` | DONE |
 
@@ -26,7 +27,7 @@ session.
 
 | Test file | Count | Status |
 |---|---|---|
-| `tests/test_frequency.py` | 56 | DONE (all passing) |
+| `tests/test_frequency.py` | 62 | DONE (all passing) |
 
 ## Documentation
 
@@ -35,25 +36,25 @@ session.
 | `README.md` | DONE |
 | `CLAUDE.md` | DONE |
 | `docs/ARCHITECTURE.md` | DONE |
-| `docs/PROJECT_STATE.md` | IN PROGRESS |
-| `docs/DECISIONS.md` | PENDING |
-| `docs/DEVELOPMENT_GUIDE.md` | PENDING |
-| `docs/KNOWN_ISSUES.md` | PENDING |
+| `docs/PROJECT_STATE.md` | DONE |
+| `docs/DECISIONS.md` | DONE |
+| `docs/DEVELOPMENT_GUIDE.md` | DONE |
+| `docs/KNOWN_ISSUES.md` | DONE |
 
 ## Report
 
 | File | Status |
 |---|---|
 | `docs/report.tex` | DONE |
-| `docs/report.pdf` (11 pages, A4) | DONE |
+| `docs/report.pdf` | DONE |
 
 ## Memory
 
 | File | Status |
 |---|---|
-| `.memory/CURRENT_SESSION.md` | PENDING |
-| `.memory/PROJECT_CONTEXT.md` | PENDING |
-| `.memory/HANDOFF.md` | PENDING |
+| `.memory/CURRENT_SESSION.md` | DONE |
+| `.memory/PROJECT_CONTEXT.md` | DONE |
+| `.memory/HANDOFF.md` | DONE |
 
 ---
 
@@ -63,7 +64,7 @@ session.
 
 ```bash
 python3 -m pytest tests/ -v
-# 56 passed
+# 62 passed
 ```
 
 ### Report Compilation
@@ -71,7 +72,7 @@ python3 -m pytest tests/ -v
 ```bash
 cd docs
 pdflatex report.tex
-# report.pdf, 11 pages, no warnings
+# report.pdf, A4
 ```
 
 ### Visualization
@@ -83,6 +84,4 @@ The waveform PNGs are generated to `docs/waveform_sine.png` and
 
 ## Next Steps
 
-1. Complete remaining documentation files.
-2. Write the `.memory/` files.
-3. Final end-to-end verification.
+1. Final end-to-end verification and merge of the punctuation-keys PR.

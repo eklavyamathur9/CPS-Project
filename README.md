@@ -13,14 +13,15 @@ software, **without a microphone or audio capture hardware**.
 
 ## Features
 
-- **Custom frequency database**: 37 keys (A–Z + 0–9 + SPACE), each with a unique frequency.
+- **Custom frequency database**: 48 keys (A–Z + 0–9 + SPACE + 11 punctuation
+  marks), each with a unique frequency.
 - **Software frequency generation**: synthetic signal with optional measurement noise.
 - **Frequency analysis & matching**: nearest-frequency classification with a tolerance.
 - **Statistical confidence**: per-key confidence score (0.0–1.0) derived from the detection error.
 - **Keystroke reconstruction**: rebuilds the typed sequence from detected frequencies.
 - **Paragraph input**: type or paste a full multi-line paragraph; every valid
-  keystroke is processed through the frequency pipeline (newlines and
-  unsupported characters are skipped)
+  keystroke is processed through the frequency pipeline, including punctuation
+  (newlines and unsupported characters are skipped)
 - **CPS verification**:
   - WCET / average execution time measurement
   - Robust multi-trial timing (median + P95 WCET)
@@ -96,10 +97,10 @@ analysis output to the clipboard.
 python3 -m pytest tests/ -v
 ```
 
-56 unit tests cover the CPS invariants, identification, reconstruction,
+62 unit tests cover the CPS invariants, identification, reconstruction,
 deadline, liveness, termination, key mapping, statistical confidence,
-multi-trial WCET, report export, paragraph/multi-line input, and the
-incremental waveform helpers.
+multi-trial WCET, report export, paragraph/multi-line input, punctuation
+keys, and the incremental waveform helpers.
 
 ---
 
@@ -125,7 +126,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic + keypad GUI
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram + live updaters
 ├── tests/
-│   └── test_frequency.py             # 56 unit tests
+│   └── test_frequency.py             # 62 unit tests
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report
@@ -164,7 +165,12 @@ CPSProject/
 | 3 | 1340 | 4 | 1370 |
 | 5 | 1400 | 6 | 1430 |
 | 7 | 1460 | 8 | 1490 |
-| 9 | 1520 | | |
+| 9 | 1520 | . | 1550 |
+| , | 1580 | ! | 1610 |
+| ? | 1640 | ; | 1670 |
+| : | 1700 | ' | 1730 |
+| " | 1760 | ( | 1790 |
+| ) | 1820 | - | 1850 |
 
 ---
 

@@ -27,12 +27,12 @@ The GUI opens with two tabs:
   Waveform" button).
 
 Typed or pasted input goes into a **multi-line text area** and can be a full
-paragraph. Only valid keys (A–Z, 0–9, SPACE) are processed; newlines and
-unsupported characters are skipped. The keypad (A–Z + 0–9 + SPACE + Clear) is
-for live, single-key demonstration: clicking a keypad button appends the key to
-the sequence and **incrementally updates the waveform plots live** on every
-key press. The status bar shows the latest per-key frequency, detected key,
-error, and processing time.
+paragraph. Valid keys (A–Z, 0–9, SPACE, and punctuation `. , ! ? ; : ' " ( ) -`)
+are processed; newlines and unsupported characters are skipped. The keypad
+(A–Z + 0–9 + SPACE + Clear) is for live, single-key demonstration: clicking a
+keypad button appends the key to the sequence and **incrementally updates the
+waveform plots live** on every key press. The status bar shows the latest
+per-key frequency, detected key, error, and processing time.
 
 ---
 
@@ -73,8 +73,10 @@ docs/
 1. Add the key to `KEY_FREQUENCIES` in `src/acoustic_side_channel.py`.
    Choose a frequency that is at least `2 × TOLERANCE` away from existing
    frequencies to avoid ambiguity.
-2. Update the `keys_from_text` mapping if the character is non-alphabetic
-   (e.g. a space → `"SPACE"`).
+2. Update the `key_from_char` mapping only for characters that need a
+   translation to a key symbol (e.g. a space → `"SPACE"`); alphanumeric and
+   punctuation keys whose character is already in `KEY_FREQUENCIES` map
+   directly.
 3. (Optional) Update the frequency table in `docs/report.tex`.
 4. Add/update a unit test in `tests/test_frequency.py`.
 
@@ -105,7 +107,7 @@ Functions in `src/waveform_visualization.py`:
   analysis/report always covers the full sequence.
 
 To change the plotted frequency band in the spectrogram, adjust the mask
-`(freqs >= 350) & (freqs <= 1600)`.
+`(freqs >= 350) & (freqs <= 1900)` (and `ax.set_ylim` in `plot_spectrogram`).
 
 ---
 
