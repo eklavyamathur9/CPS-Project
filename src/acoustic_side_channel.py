@@ -594,22 +594,41 @@ class AcousticSideChannelApp:
 
         ttk.Label(
             input_frame,
-            text="Enter Key Sequence:"
-        ).grid(row=0, column=0, padx=5)
+            text="Enter Paragraph:"
+        ).grid(row=0, column=0, padx=5, sticky="n")
 
-        self.input_entry = ttk.Entry(
+        self.input_entry = tk.Text(
             input_frame,
-            width=40
+            width=50,
+            height=6,
+            wrap="word"
         )
 
         self.input_entry.grid(
             row=0,
             column=1,
-            padx=5
+            padx=5,
+            sticky="w"
+        )
+
+        self.input_scrollbar = ttk.Scrollbar(
+            input_frame,
+            orient="vertical",
+            command=self.input_entry.yview
+        )
+
+        self.input_scrollbar.grid(
+            row=0,
+            column=2,
+            sticky="ns"
+        )
+
+        self.input_entry.configure(
+            yscrollcommand=self.input_scrollbar.set
         )
 
         self.input_entry.insert(
-            0,
+            "1.0",
             "HELLO WORLD"
         )
 
@@ -626,6 +645,7 @@ class AcousticSideChannelApp:
         noise_check.grid(
             row=1,
             column=1,
+            columnspan=2,
             pady=10
         )
 
@@ -634,6 +654,7 @@ class AcousticSideChannelApp:
         button_frame.grid(
             row=2,
             column=1,
+            columnspan=2,
             pady=10
         )
 
@@ -941,11 +962,9 @@ class AcousticSideChannelApp:
         """
         self.pressed_keys.append(key)
 
-        # Keep the entry text in sync with the pressed keys.
-        current = self.input_entry.get()
+        # Keep the input text in sync with the pressed keys.
         char = " " if key == "SPACE" else key
-        self.input_entry.delete(0, tk.END)
-        self.input_entry.insert(0, current + char)
+        self.input_entry.insert(tk.END, char)
 
         # Per-key processing for the status line.
         frequency = generate_frequency(key, noise=self.noise_var.get())
@@ -993,7 +1012,7 @@ class AcousticSideChannelApp:
         """
         self.pressed_keys = []
 
-        self.input_entry.delete(0, tk.END)
+        self.input_entry.delete("1.0", tk.END)
 
         for fig in (self.live_spec_fig, self.live_sine_fig):
             if fig is not None:
@@ -1015,7 +1034,7 @@ class AcousticSideChannelApp:
         text. Subsequent keypad presses update the plots incrementally.
         """
         # Sync the internal key list from the entry text.
-        text = self.input_entry.get()
+        text = self._current_input()
         keys = keys_from_text(text)
 
         if keys:
@@ -1042,6 +1061,16 @@ class AcousticSideChannelApp:
             self.status_var.set("Visualization failed")
 
     # --------------------------------------------------------
+    # INPUT HELPER
+    # --------------------------------------------------------
+
+    def _current_input(self):
+        """
+        Return the current input text (multi-line safe).
+        """
+        return self.input_entry.get("1.0", tk.END).strip()
+
+    # --------------------------------------------------------
     # ANALYSIS FUNCTION
     # --------------------------------------------------------
 
@@ -1052,7 +1081,7 @@ class AcousticSideChannelApp:
         Delegates to format_report() so the GUI output and the exported
         report always come from the same single code path.
         """
-        text = self.input_entry.get()
+        text = self._current_input()
 
         self.status_var.set("Analyzing...")
         self.root.update_idletasks()
@@ -1073,7 +1102,7 @@ class AcousticSideChannelApp:
         Export the current analysis as a text report, optionally saving the
         waveform plots (PNG) alongside it.
         """
-        text = self.input_entry.get()
+        text = self._current_input()
 
         output_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
