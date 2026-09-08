@@ -129,10 +129,18 @@ pdflatex report.tex
 ```
 
 The report embeds `waveform_sine.png` and `waveform_spectrogram.png` from the
-`docs/` directory. Regenerate them if you change keys or the sequence. Note
-that `save_visualizations` writes timestamped filenames to avoid overwriting,
-so to refresh the tracked report figures, save the plots directly to the
-canonical `waveform_sine.png` / `waveform_spectrogram.png` paths:
+`docs/` directory. Since the report restructure, all report figures (waveforms
+plus the result figures `timing_vs_deadline.png`, `error_distribution.png`,
+`confidence.png`, `optimization.png`) are regenerated deterministically in one
+command by the figure generator:
+
+```bash
+python3 docs/make_figures.py   # writes all 6 PNGs into docs/ (no GUI needed)
+```
+
+`make_figures.py` uses fixed representative values, so every run produces
+byte-identical figures. The older manual approach for the waveform PNGs (saving
+directly to the canonical paths) is still valid and is preserved below.
 
 ```bash
 cd src
