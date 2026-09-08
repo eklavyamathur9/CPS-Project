@@ -45,8 +45,11 @@ session.
 
 | File | Status |
 |---|---|
-| `docs/report.tex` | DONE |
-| `docs/report.pdf` | DONE |
+| `docs/report.tex` | DONE (restructured, 31 pages) |
+| `docs/report.pdf` | DONE (31 pages, compiles clean) |
+| `docs/REPORT_PLAN.md` | DONE (accepted expansion plan) |
+| `docs/make_figures.py` | DONE (deterministic figure generator) |
+| `docs/{timing_vs_deadline,error_distribution,confidence,optimization}.png` | DONE (result figures) |
 
 ## Memory
 
@@ -71,17 +74,39 @@ python3 -m pytest tests/ -v
 
 ```bash
 cd docs
-pdflatex report.tex
-# report.pdf, A4
+pdflatex report.tex   # run twice
+# report.pdf, 31 pages, no undefined references
 ```
+
+The LaTeX report was restructured to the assignment outline
+(`cps notes.txt`) and expanded to 31 pages. It now covers:
+targeted aspects (performance + security focus), technical terms,
+problem statement, underlying principle (incl. real-world background),
+CPS relevance, system architecture (TikZ diagram), hardware/platform
+details, software design (full 48-key frequency DB table, function
+reference, WCET/liveness/termination pseudocode, storage footprint),
+design decisions, optimization flow, testing methodology (traceability
+table, 62 tests, per-key + pangram results, punctuated paragraph,
+sample report output), results figures, theoretical + statistical +
+complexity analysis, performance analysis, problems/bugs/limitations,
+security + reliability analysis, conclusion, related-work comparison,
+and bibliography.
 
 ### Visualization
 
 The waveform PNGs are generated to `docs/waveform_sine.png` and
-`docs/waveform_spectrogram.png` and embedded in the LaTeX report.
+`docs/waveform_spectrogram.png` and embedded in the LaTeX report. The
+result figures (`timing_vs_deadline.png`, `error_distribution.png`,
+`confidence.png`, `optimization.png`) are generated reproducibly by
+`docs/make_figures.py` using deterministic representative values:
+
+```bash
+python3 docs/make_figures.py
+```
 
 ---
 
 ## Next Steps
 
 1. Final end-to-end verification and merge of the punctuation-keys PR.
+2. Merge PR #7 (report restructure, drives issue #6).

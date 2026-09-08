@@ -9,6 +9,8 @@ The project is fully scaffolded and verified:
 
 - **Application** — `src/acoustic_side_channel.py` with core logic + tkinter GUI
   (Analysis + Waveform tabs) and an on-screen keypad.
+- **Keys** — 48 keys (A–Z, SPACE, 0–9, 11 punctuation marks), frequencies
+  440–1850 Hz on a 30 Hz grid, band widened to 1900 Hz for plots.
 - **Paragraph input** — multi-line `tk.Text` input box; supported keys include
   punctuation `. , ! ? ; : ' " ( ) -` (frequencies 1550–1850 Hz);
   newlines/unmapped characters skipped, leading/trailing spaces preserved
@@ -20,9 +22,17 @@ The project is fully scaffolded and verified:
   plus incremental updaters and a shared `compute_spectrogram` helper). Plot
   rendering is capped at `MAX_PLOT_KEYS = 30` so long paragraphs stay responsive.
 - **Tests** — `tests/test_frequency.py`, 62 tests, all passing.
-- **Report** — `docs/report.tex` compiled to `docs/report.pdf`.
+- **Report** — `docs/report.tex` compiled to `docs/report.pdf` (31 pages,
+  restructured to the assignment outline, focus: performance + security).
+  `docs/make_figures.py` regenerates all report figures deterministically.
 - **Docs** — `README.md`, `CLAUDE.md`, and the full docs/ set.
 - **Memory** — `.memory/CURRENT_SESSION.md`, `PROJECT_CONTEXT.md`, `HANDOFF.md`.
+
+## Open PRs / Issues
+
+- **PR #7 (draft)** — report restructure + expansion; drives issue #6.
+  Branch `docs/report-restructure`. Needs review then undraft + merge.
+- PR #5 (punctuation) merged; issue #4 closed via merge.
 
 ## How to Verify Everything Works
 
@@ -51,10 +61,12 @@ underlying visual math is covered by headless unit tests.
 
 ## Remaining / Optional Work
 
+- Review and merge PR #7 (report restructure; drives issue #6). After merge,
+  close any leftover items in PROJECT_STATE.md Next Steps.
+- `cps notes.txt` (repo root, untracked) is the assignment outline driving the
+  report structure; decide whether to keep it uncommitted.
 - Visual check: launch the GUI to confirm the Waveform tab renders both figures
   (could not be visually confirmed in a headless session).
-- The LaTeX report's performance-results table uses representative values;
-  regenerate/confirm if the user wants exact measured numbers.
 
 ## Command Cheatsheet
 

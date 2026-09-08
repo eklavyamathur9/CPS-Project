@@ -38,6 +38,11 @@ Scaffold a complete, well-documented project for the CPS assignment:
 | Ran tests — 56 pass | DONE |
 | Added punctuation keys (11 marks, 1550–1850 Hz) + widened spectrogram band to 1900 Hz | DONE |
 | Ran tests — 62 pass | DONE |
+| Evaluated public keystroke datasets (JBFH/Keystroke-Datasets, ggerganov/kbd-audio) — neither usable as frequency source; cited as Related Work only | DONE |
+| Merged punctuation PR (#5): 48 keys total (440–1850 Hz), all docs updated | DONE |
+| Restructured + expanded `docs/report.tex` to assignment outline; 31 pages (was 11) | DONE |
+| Added `docs/make_figures.py` (deterministic figures) + 4 result PNGs + TikZ architecture + pseudocode + full frequency table | DONE |
+| Verified report compiles (no errors, no undefined refs) and 62 tests pass | DONE |
 
 ## Commands Used
 
