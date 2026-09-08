@@ -37,6 +37,8 @@ Each key is assigned a unique frequency signature:
 | ... | ... |
 | Z | 1190 |
 | SPACE | 1220 |
+| 0–9 | 1250–1520 |
+| punctuation (`. , ! ? ; : ' " ( ) -`) | 1550–1850 |
 
 Processing pipeline:
 

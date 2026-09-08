@@ -97,7 +97,7 @@ to save PNG files for the LaTeX report.
 **Decision:** The spectrogram is computed manually with a sliding Hann
 window + `numpy.fft.rfft`, rather than `matplotlib.pyplot.specgram`.
 
-**Rationale:** Gives finer control over the plotted frequency band (350–1600 Hz)
+**Rationale:** Gives finer control over the plotted frequency band (350–1900 Hz)
 and lets us overlay the expected key-frequency lines for emphasis.
 
 ---
@@ -133,3 +133,26 @@ keys per plot/update.
 **Rationale:** Paragraph input can inject hundreds of keys; rendering all of
 them builds thousands of subplots and stalls the GUI. The analysis/report
 always covers the full sequence — only the plots are capped.
+
+---
+
+## 13. Curated Punctuation Keys
+
+**Decision:** Extend `KEY_FREQUENCIES` from 37 to 48 keys with 11 punctuation
+marks (`. , ! ? ; : ' " ( ) -`) continuing the 30 Hz grid from 1550 Hz to
+1850 Hz.
+
+**Rationale:** Paragraph input (#11) silently dropped punctuation, leaving
+reconstructed sequences incomplete. Adding a small curated set keeps the
+database readable while allowing realistic text (`Ready, set, go!`) to
+reconstruct fully. Punctuation is entered via the text box only — the
+on-screen keypad stays A–Z / 0–9 / SPACE to avoid clutter. The spectrogram
+band widens to 350–1900 Hz so all punctuation signatures are visible.
+
+**Alternative considered:** Full ASCII printable set — rejected (large, and
+shift-combined pairs such as `,`/`<` cannot be distinguished without modeling
+shift). Using real ASCA datasets (`JBFH-Dev/Keystroke-Datasets`,
+`ggerganov/kbd-audio`) — rejected: they contain raw audio / live-capture tooling
+with no reusable per-key frequencies, and real keystroke acoustics are
+broadband transients classified by deep learning rather than single tones, so
+they conflict with the unique-frequency invariant.

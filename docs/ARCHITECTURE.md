@@ -43,7 +43,7 @@ The main application and core logic engine.
 
 | Constant | Value | Purpose |
 |---|---|---|
-| `KEY_FREQUENCIES` | dict | Key → frequency mapping (37 keys: A–Z, 0–9, SPACE) |
+| `KEY_FREQUENCIES` | dict | Key → frequency mapping (48 keys: A–Z, 0–9, SPACE, 11 punctuation marks) |
 | `TOLERANCE` | 8.0 | Max accepted frequency error (Hz) |
 | `DEADLINE_MS` | 50.0 | Real-time deadline (ms) |
 | `WCET_TRIALS` | 20 | Number of trials for robust median/P95 WCET |
@@ -70,9 +70,9 @@ The main application and core logic engine.
 **GUI class**: `AcousticSideChannelApp`
 - Manages the tkinter interface with two tabs (Analysis, Waveform), a File menu
   (Export Report, Copy Results), a **multi-line input box** (accepted input is
-  a full paragraph: A–Z, 0–9, SPACE; newlines and unsupported characters are
-  skipped), and an on-screen **keypad** (A–Z + 0–9 + SPACE + Clear) whose
-  buttons append keys incrementally.
+  a full paragraph: A–Z, 0–9, SPACE and punctuation `. , ! ? ; : ' " ( ) -`;
+  newlines and unsupported characters are skipped), and an on-screen **keypad**
+  (A–Z + 0–9 + SPACE + Clear) whose buttons append keys incrementally.
 - `_current_input()` reads the text box via `get("1.0", "end-1c")`, dropping
   only tk.Text's implicit trailing newline and preserving the user's spaces.
 - `on_key_pressed(key)` appends a key to the end of the input text, runs the
