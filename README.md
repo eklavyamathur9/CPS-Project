@@ -18,6 +18,9 @@ software, **without a microphone or audio capture hardware**.
 - **Frequency analysis & matching**: nearest-frequency classification with a tolerance.
 - **Statistical confidence**: per-key confidence score (0.0–1.0) derived from the detection error.
 - **Keystroke reconstruction**: rebuilds the typed sequence from detected frequencies.
+- **Paragraph input**: type or paste a full multi-line paragraph; every valid
+  keystroke is processed through the frequency pipeline (newlines and
+  unsupported characters are skipped)
 - **CPS verification**:
   - WCET / average execution time measurement
   - Robust multi-trial timing (median + P95 WCET)
@@ -59,10 +62,11 @@ pip install -r requirements.txt
 python3 src/acoustic_side_channel.py
 ```
 
-A GUI opens where you can enter a key sequence (e.g. `HELLO WORLD`), toggle
-synthetic noise, and either **Analyze** or **Visualize Waveform**. You can also
-use the on-screen **keypad**: every key click appends to the sequence and
-**incrementally updates the waveform plots live**.
+A GUI opens with a multi-line text area where you can type or paste a full
+paragraph (e.g. `HELLO WORLD`), toggle synthetic noise, and either **Analyze**
+or **Visualize Waveform**. You can also use the on-screen **keypad**: every key
+click appends to the sequence and **incrementally updates the waveform plots
+live**.
 
 The analysis tab reports:
 - Invariant check results
@@ -76,7 +80,9 @@ The waveform tab displays:
 - A sine waveform for each key
 - A simulated frequency spectrogram
 
-Both plots grow live as you click keypad keys (use **Clear** to reset).
+Both plots grow live as you click keypad keys (use **Clear** to reset). For
+very long inputs the plots render the first 30 keys to stay responsive; the
+analysis still covers every key in the paragraph.
 
 Use the **Export Report** button to save the full analysis as a text file
 (optionally including the waveform PNG plots), and **Copy Result** to copy the
@@ -90,9 +96,10 @@ analysis output to the clipboard.
 python3 -m pytest tests/ -v
 ```
 
-47 unit tests cover the CPS invariants, identification, reconstruction,
+56 unit tests cover the CPS invariants, identification, reconstruction,
 deadline, liveness, termination, key mapping, statistical confidence,
-multi-trial WCET, report export, and the incremental waveform helpers.
+multi-trial WCET, report export, paragraph/multi-line input, and the
+incremental waveform helpers.
 
 ---
 
@@ -118,7 +125,7 @@ CPSProject/
 │   ├── acoustic_side_channel.py      # Main app + core logic + keypad GUI
 │   └── waveform_visualization.py     # matplotlib sine + spectrogram + live updaters
 ├── tests/
-│   └── test_frequency.py             # 47 unit tests
+│   └── test_frequency.py             # 56 unit tests
 ├── docs/
 │   ├── report.tex                    # LaTeX report
 │   ├── report.pdf                    # Compiled report

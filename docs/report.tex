@@ -412,6 +412,27 @@ $350$--$1600$ Hz, which covers all 37 key signatures plus the digit keys.
     \label{fig:spec}
 \end{figure}
 
+\subsection{Paragraph Input}
+
+In addition to the keypad, the application accepts a full paragraph in a
+multi-line text area. On \textbf{Analyze}, every valid keystroke in the text
+is processed through the same frequency pipeline:
+
+\begin{enumerate}
+    \item The text is converted into a key sequence; supported keys are the
+          37 signatures (A--Z, 0--9, and SPACE).
+    \item Newlines and unsupported characters are skipped, exactly like any
+          other invalid input.
+    \item Each key is processed through \texttt{generate\_frequency}
+          $\rightarrow$ \texttt{process\_frequency}, producing a detected key,
+          an error $V$, and a confidence $C$.
+    \item The reconstructed sequence and the per-key details are reported.
+\end{enumerate}
+
+Because a paragraph can contain hundreds of keys, the waveform plots render
+only the first 30 keys (\texttt{MAX\_PLOT\_KEYS}) to stay responsive; the
+analysis and exported report always cover the full sequence.
+
 \subsection{Interactive Keypad and Live Updates}
 
 In addition to batch analysis, the application provides an on-screen
@@ -635,11 +656,12 @@ The implementation satisfies all the CPS verification requirements:
 \end{itemize}
 
 The project provides a complete, verifiable CPS model and a graphical
-interface suitable for demonstration in a project presentation. The on-screen
-keypad (A--Z + 0--9 + SPACE) lets a presenter type a sequence live and watch
-the sine and spectrogram plots grow with each key press, while the status bar
-reports the per-key frequency, error, and execution time in real time. The
-full analysis can be exported as a text report (optionally with the waveform
-plots) or copied to the clipboard for sharing.
+interface suitable for demonstration in a project presentation. The multi-line
+input box accepts a full paragraph and reconstructs every valid keystroke,
+while the on-screen keypad (A--Z + 0--9 + SPACE) lets a presenter type a
+sequence live and watch the sine and spectrogram plots grow with each key
+press, and the status bar reports the per-key frequency, error, and execution
+time in real time. The full analysis can be exported as a text report
+(optionally with the waveform plots) or copied to the clipboard for sharing.
 
 \end{document}

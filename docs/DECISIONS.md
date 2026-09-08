@@ -97,7 +97,7 @@ to save PNG files for the LaTeX report.
 **Decision:** The spectrogram is computed manually with a sliding Hann
 window + `numpy.fft.rfft`, rather than `matplotlib.pyplot.specgram`.
 
-**Rationale:** Gives finer control over the plotted frequency band (350–1300 Hz)
+**Rationale:** Gives finer control over the plotted frequency band (350–1600 Hz)
 and lets us overlay the expected key-frequency lines for emphasis.
 
 ---
@@ -109,3 +109,27 @@ abstractions or configuration beyond what is needed.
 
 **Rationale:** Follows the principle of minimal code that solves the problem,
 making the project easy to understand and test.
+
+---
+
+## 11. Multi-Line Paragraph Input
+
+**Decision:** The GUI input is a multi-line `tk.Text` box that accepts a full
+paragraph instead of a single-line entry.
+
+**Rationale:** Enables realistic paragraph-length reconstruction demos. The
+core pipeline already skipped invalid characters, so newlines are handled the
+same way (silently skipped) with no new key or pseudo-key. `_current_input()`
+uses `get("1.0", "end-1c")` so tk.Text's implicit trailing newline is dropped
+without also stripping the user's real leading/trailing spaces (SPACE keys).
+
+---
+
+## 12. Waveform Rendering Cap (MAX_PLOT_KEYS)
+
+**Decision:** The visualization functions render at most `MAX_PLOT_KEYS = 30`
+keys per plot/update.
+
+**Rationale:** Paragraph input can inject hundreds of keys; rendering all of
+them builds thousands of subplots and stalls the GUI. The analysis/report
+always covers the full sequence — only the plots are capped.

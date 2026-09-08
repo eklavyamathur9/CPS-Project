@@ -25,14 +25,17 @@ Scaffold a complete, well-documented project for the CPS assignment:
 | Ran tests — all 28 pass | DONE |
 | Generated waveform PNGs into docs/ | DONE |
 | Wrote `docs/report.tex` | DONE |
-| Compiled `docs/report.pdf` (9 pages, no warnings) | DONE |
+| Compiled `docs/report.pdf` (11 pages, no warnings) | DONE |
 | Wrote `README.md`, `CLAUDE.md` | DONE |
 | Wrote docs/*.md (ARCHITECTURE, STATE, DECISIONS, GUIDE, ISSUES) | DONE |
 | Wrote `.memory/*.md` | DONE |
 | Added on-screen keypad + live incremental waveform updates | DONE |
 | Added `key_from_char` + incremental updaters + canvas reuse | DONE |
 | Added 8 new tests (key mapping + incremental helpers) — all pass | DONE |
-| Updated docs + memory for the live-update feature | IN PROGRESS |
+| Updated docs + memory for the live-update feature | DONE |
+| Added export report/copy, digit keys 0--9, per-key confidence, multi-trial WCET (median + P95) | DONE |
+| Added multi-line paragraph input (tk.Text) + tests | DONE |
+| Ran tests — 56 pass | DONE |
 
 ## Commands Used
 
@@ -44,12 +47,14 @@ cd docs && pdflatex report.tex                # build report
 
 ## Verification Notes
 
-- 28/28 unit tests pass.
-- PDF compiles cleanly with no warnings.
+- 56/56 unit tests pass.
+- PDF compiles cleanly with no errors.
 - Modules import and core functions (invariants, liveness, termination) verified
   manually via the Python REPL.
 - Incremental update helpers verified headlessly (update_spectrogram,
   update_sine_plot run without error).
+- Paragraph validation: MAX_PLOT_KEYS caps plots (300 keys → 30 axes);
+  CRLF/trailing-newline input verified; leading/trailing spaces preserved.
 
 ## Open Items
 

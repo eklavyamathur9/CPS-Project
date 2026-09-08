@@ -13,9 +13,10 @@ capture; all frequencies are predefined constants.
 ┌─────────────────────────────────────────────────────────────────┐
 │                     GUI (tkinter)                               │
 │  ┌──────────────┐        ┌──────────────────────────────┐      │
-│  │  Input Entry │        │  Notebook (tabs)            │      │
-│  │  Noise Toggle│        │  - Analysis Result          │      │
-│  │  Buttons     │        │  - Waveform                 │      │
+│  │ Input Text   │        │  Notebook (tabs)            │      │
+│  │ (paragraph)  │        │  - Analysis Result          │      │
+│  │ Noise Toggle │        │  - Waveform                 │      │
+│  │ Buttons      │        │                             │      │
 │  └──────┬───────┘        └──────────────┬───────────────┘      │
 │         │                               │                      │
 │         ▼                               ▼                      │
@@ -68,27 +69,37 @@ The main application and core logic engine.
 
 **GUI class**: `AcousticSideChannelApp`
 - Manages the tkinter interface with two tabs (Analysis, Waveform), a File menu
-  (Export Report, Copy Results), and an on-screen **keypad** (A–Z + 0–9 +
-  SPACE + Clear) whose buttons append keys incrementally.
-- `on_key_pressed(key)` appends a key, syncs the entry text, runs the per-key
-  pipeline, and updates the waveform plots **live** on each press.
+  (Export Report, Copy Results), a **multi-line input box** (accepted input is
+  a full paragraph: A–Z, 0–9, SPACE; newlines and unsupported characters are
+  skipped), and an on-screen **keypad** (A–Z + 0–9 + SPACE + Clear) whose
+  buttons append keys incrementally.
+- `_current_input()` reads the text box via `get("1.0", "end-1c")`, dropping
+  only tk.Text's implicit trailing newline and preserving the user's spaces.
+- `on_key_pressed(key)` appends a key to the end of the input text, runs the
+  per-key pipeline, and updates the waveform plots **live** on each press.
 - `analyze()` runs the full analysis by delegating to `format_report()` and
   writes the result to the text output.
 - `export_report()` saves the report to disk (optionally with PNG plots).
 - `copy_result()` copies the current output to the clipboard.
 - `show_visualization()` / `_build_live_canvas()` build a reusable two-panel
   figure (spectrogram + sine) that incremental updates keep refreshing.
-- `clear_live()` resets the accumulated keys, entry, and live canvas.
+- `clear_live()` resets the accumulated keys, input text, and live canvas.
 
 ### `src/waveform_visualization.py`
 
 The visualization module using matplotlib and numpy.
 
+| Constant | Value | Purpose |
+|---|---|---|
+| `SAMPLE_RATE` | 44100 | Simulated acoustic sampling rate (Hz) |
+| `DURATION` | 0.05 | Per-key burst duration (s) |
+| `MAX_PLOT_KEYS` | 30 | Maximum keys rendered in one plot/update (keeps paragraph-size inputs responsive) |
+
 | Function | Purpose |
 |---|---|
 | `generate_sine(key, ...)` | Returns `(t, signal)` for a key's sine wave |
-| `plot_sine_waves(keys, ...)` | Stacked sine-plot per key; returns a Figure |
-| `plot_spectrogram(keys, ...)` | Frequency-vs-time heatmap; returns a Figure |
+| `plot_sine_waves(keys, ...)` | Stacked sine-plot per key (capped at MAX_PLOT_KEYS); returns a Figure |
+| `plot_spectrogram(keys, ...)` | Frequency-vs-time heatmap (capped at MAX_PLOT_KEYS); returns a Figure |
 | `compute_spectrogram(keys, noise)` | Shared FFT spectrogram computation; returns grids |
 | `update_sine_plot(fig, axes, keys, noise)` | Incrementally refreshes the sine plot for a growing key list |
 | `update_spectrogram(fig, ax, keys, noise)` | Incrementally refreshes the spectrogram for a growing key list |
